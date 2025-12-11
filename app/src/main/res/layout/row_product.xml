@@ -5,33 +5,31 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="6dp"
-    app:cardBackgroundColor="@android:color/white">
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="12dp">
 
         <ImageView
-            android:id="@+id/productIv"
+            android:id="@+id/productImageIv"
             android:layout_width="match_parent"
             android:layout_height="120dp"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/ic_launcher_foreground"
             android:scaleType="centerCrop"
-            android:background="#F5F5F5" />
+            android:src="@drawable/ic_launcher_foreground"
+            android:contentDescription="Product Image" />
 
         <TextView
-            android:id="@+id/productTitleTv"
+            android:id="@+id/productNameTv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Product Title"
+            android:text="Product Name"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="8dp"
             android:maxLines="2"
             android:ellipsize="end" />
 
@@ -39,48 +37,36 @@
             android:id="@+id/productPriceTv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="$0.00"
-            android:textSize="16sp"
+            android:text="Rs. 0.00"
+            android:textSize="14sp"
+            android:textColor="@android:color/holo_green_dark"
             android:textStyle="bold"
-            android:textColor="#4CAF50" />
+            android:layout_marginTop="4dp" />
 
-        <!-- Discount Badge -->
         <TextView
-            android:id="@+id/productDiscountTv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:background="#FF5722"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:text="0% OFF"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
-        <!-- Expiry Date -->
-        <TextView
-            android:id="@+id/productExpiryTv"
+            android:id="@+id/productDescriptionTv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Expires: N/A"
+            android:text="Description"
             android:textSize="12sp"
-            android:textColor="#757575"
-            android:visibility="gone" />
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
-        <com.google.android.material.button.MaterialButton
+        <TextView
             android:id="@+id/addToCartBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:text="Add to Cart"
-            android:textSize="12sp"
-            app:backgroundTint="#FF9800"
-            app:cornerRadius="6dp" />
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:background="@android:color/holo_blue_dark"
+            android:gravity="center"
+            android:padding="8dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true" />
 
     </LinearLayout>
 

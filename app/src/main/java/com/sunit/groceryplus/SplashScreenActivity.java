@@ -21,6 +21,10 @@ public class SplashScreenActivity extends AppCompatActivity {
         // Test database connection
         DatabaseConnectionTest.testDatabaseConnection(this);
 
+        // Insert sample data on first run
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        dbHelper.insertSampleData();
+        
         // Animate the delivery guy
         animateDeliveryGuy();
 

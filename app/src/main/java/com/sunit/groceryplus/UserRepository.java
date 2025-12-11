@@ -73,6 +73,18 @@ public class UserRepository {
     }
 
     /**
+     * Update user profile
+     */
+    public boolean updateUser(int userId, String name, String email, String phone, String address) {
+        try {
+            return dbHelper.updateUser(userId, name, email, phone, address);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating user", e);
+            return false;
+        }
+    }
+
+    /**
      * Check if user is admin
      */
     public boolean isAdmin(User user) {

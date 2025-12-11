@@ -71,6 +71,26 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_QUANTITY = "quantity";
     }
 
+    /* Inner class that defines the favorites table contents */
+    public static class FavoriteEntry implements BaseColumns {
+        public static final String TABLE_NAME = "favorites";
+        public static final String COLUMN_NAME_FAVORITE_ID = "favorite_id";
+        public static final String COLUMN_NAME_USER_ID = "user_id";
+        public static final String COLUMN_NAME_PRODUCT_ID = "product_id";
+        public static final String COLUMN_NAME_ADDED_AT = "added_at";
+    }
+
+    /* Inner class that defines the messages table contents */
+    public static class MessageEntry implements BaseColumns {
+        public static final String TABLE_NAME = "messages";
+        public static final String COLUMN_NAME_MESSAGE_ID = "message_id";
+        public static final String COLUMN_NAME_SENDER_ID = "sender_id";
+        public static final String COLUMN_NAME_RECEIVER_ID = "receiver_id";
+        public static final String COLUMN_NAME_MESSAGE_TEXT = "message_text";
+        public static final String COLUMN_NAME_IS_READ = "is_read";
+        public static final String COLUMN_NAME_CREATED_AT = "created_at";
+    }
+
     // SQL statements to create tables
     public static final String SQL_CREATE_USERS_TABLE =
             "CREATE TABLE " + UserEntry.TABLE_NAME + " (" +
@@ -80,7 +100,7 @@ public final class DatabaseContract {
                     UserEntry.COLUMN_NAME_USER_PHONE + " TEXT," +
                     UserEntry.COLUMN_NAME_USER_PASSWORD + " TEXT," +
                     UserEntry.COLUMN_NAME_USER_SALT + " TEXT," +
-                    UserEntry.COLUMN_NAME_USER_TYPE + " TEXT DEFAULT 'customer'," +
+                    UserEntry.COLUMN_NAME_USER_TYPE + " TEXT," +
                     UserEntry.COLUMN_NAME_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP)";
 
     public static final String SQL_CREATE_CATEGORIES_TABLE =
@@ -127,6 +147,26 @@ public final class DatabaseContract {
                     "FOREIGN KEY(" + CartItemEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
                     "FOREIGN KEY(" + CartItemEntry.COLUMN_NAME_PRODUCT_ID + ") REFERENCES " + ProductEntry.TABLE_NAME + "(" + ProductEntry.COLUMN_NAME_PRODUCT_ID + "))";
 
+    public static final String SQL_CREATE_FAVORITES_TABLE =
+            "CREATE TABLE " + FavoriteEntry.TABLE_NAME + " (" +
+                    FavoriteEntry.COLUMN_NAME_FAVORITE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    FavoriteEntry.COLUMN_NAME_USER_ID + " INTEGER," +
+                    FavoriteEntry.COLUMN_NAME_PRODUCT_ID + " INTEGER," +
+                    FavoriteEntry.COLUMN_NAME_ADDED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY(" + FavoriteEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
+                    "FOREIGN KEY(" + FavoriteEntry.COLUMN_NAME_PRODUCT_ID + ") REFERENCES " + ProductEntry.TABLE_NAME + "(" + ProductEntry.COLUMN_NAME_PRODUCT_ID + "))";
+
+    public static final String SQL_CREATE_MESSAGES_TABLE =
+            "CREATE TABLE " + MessageEntry.TABLE_NAME + " (" +
+                    MessageEntry.COLUMN_NAME_MESSAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    MessageEntry.COLUMN_NAME_SENDER_ID + " INTEGER," +
+                    MessageEntry.COLUMN_NAME_RECEIVER_ID + " INTEGER," +
+                    MessageEntry.COLUMN_NAME_MESSAGE_TEXT + " TEXT," +
+                    MessageEntry.COLUMN_NAME_IS_READ + " INTEGER DEFAULT 0," +
+                    MessageEntry.COLUMN_NAME_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY(" + MessageEntry.COLUMN_NAME_SENDER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
+                    "FOREIGN KEY(" + MessageEntry.COLUMN_NAME_RECEIVER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + "))";
+
     // SQL statements to delete tables
     public static final String SQL_DELETE_USERS_TABLE =
             "DROP TABLE IF EXISTS " + UserEntry.TABLE_NAME;
@@ -145,4 +185,10 @@ public final class DatabaseContract {
             
     public static final String SQL_DELETE_CART_ITEMS_TABLE =
             "DROP TABLE IF EXISTS " + CartItemEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_FAVORITES_TABLE =
+            "DROP TABLE IF EXISTS " + FavoriteEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_MESSAGES_TABLE =
+            "DROP TABLE IF EXISTS " + MessageEntry.TABLE_NAME;
 }

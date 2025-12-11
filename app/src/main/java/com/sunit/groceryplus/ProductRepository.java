@@ -3,6 +3,11 @@ package com.sunit.groceryplus;
 import android.content.Context;
 import android.util.Log;
 
+import com.sunit.groceryplus.models.Product;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProductRepository {
     private static final String TAG = "ProductRepository";
     private DatabaseHelper dbHelper;
@@ -27,18 +32,72 @@ public class ProductRepository {
     /**
      * Get all products
      */
-    public String[] getAllProducts() {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return a list of Product objects
-        return new String[]{"Apple", "Banana", "Milk", "Bread", "Chicken"};
+    public List<Product> getAllProducts() {
+        try {
+            return dbHelper.getAllProducts();
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all products", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get product by ID
+     */
+    public Product getProductById(int productId) {
+        try {
+            return dbHelper.getProductById(productId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting product by ID", e);
+            return null;
+        }
     }
 
     /**
      * Get products by category
      */
-    public String[] getProductsByCategory(int categoryId) {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return a list of Product objects
-        return new String[]{"Product 1", "Product 2", "Product 3"};
+    public List<Product> getProductsByCategory(int categoryId) {
+        try {
+            return dbHelper.getProductsByCategory(categoryId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting products by category", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Search products
+     */
+    public List<Product> searchProducts(String query) {
+        try {
+            return dbHelper.searchProducts(query);
+        } catch (Exception e) {
+            Log.e(TAG, "Error searching products", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Update product
+     */
+    public boolean updateProduct(int productId, String productName, int categoryId, double price, String description, String image) {
+        try {
+            return dbHelper.updateProduct(productId, productName, categoryId, price, description, image);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating product", e);
+            return false;
+        }
+    }
+
+    /**
+     * Delete product
+     */
+    public boolean deleteProduct(int productId) {
+        try {
+            return dbHelper.deleteProduct(productId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting product", e);
+            return false;
+        }
     }
 }

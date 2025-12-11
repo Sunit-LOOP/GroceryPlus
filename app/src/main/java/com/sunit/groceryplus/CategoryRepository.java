@@ -3,6 +3,11 @@ package com.sunit.groceryplus;
 import android.content.Context;
 import android.util.Log;
 
+import com.sunit.groceryplus.models.Category;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class CategoryRepository {
     private static final String TAG = "CategoryRepository";
     private DatabaseHelper dbHelper;
@@ -27,9 +32,48 @@ public class CategoryRepository {
     /**
      * Get all categories
      */
-    public String[] getAllCategories() {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return a list of Category objects
-        return new String[]{"Fruits", "Vegetables", "Dairy", "Meat", "Bakery"};
+    public List<Category> getAllCategories() {
+        try {
+            return dbHelper.getAllCategories();
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all categories", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get category by ID
+     */
+    public Category getCategoryById(int categoryId) {
+        try {
+            return dbHelper.getCategoryById(categoryId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting category by ID", e);
+            return null;
+        }
+    }
+
+    /**
+     * Update category
+     */
+    public boolean updateCategory(int categoryId, String categoryName, String categoryDescription) {
+        try {
+            return dbHelper.updateCategory(categoryId, categoryName, categoryDescription);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating category", e);
+            return false;
+        }
+    }
+
+    /**
+     * Delete category
+     */
+    public boolean deleteCategory(int categoryId) {
+        try {
+            return dbHelper.deleteCategory(categoryId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting category", e);
+            return false;
+        }
     }
 }

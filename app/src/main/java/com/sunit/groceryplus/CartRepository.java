@@ -3,6 +3,11 @@ package com.sunit.groceryplus;
 import android.content.Context;
 import android.util.Log;
 
+import com.sunit.groceryplus.models.CartItem;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class CartRepository {
     private static final String TAG = "CartRepository";
     private DatabaseHelper dbHelper;
@@ -27,27 +32,62 @@ public class CartRepository {
     /**
      * Get cart items for user
      */
-    public String[] getCartItems(int userId) {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return a list of CartItem objects
-        return new String[]{"Item 1", "Item 2", "Item 3"};
+    public List<CartItem> getCartItems(int userId) {
+        try {
+            return dbHelper.getCartItemsWithDetails(userId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting cart items", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Update cart quantity
+     */
+    public boolean updateCartQuantity(int cartId, int quantity) {
+        try {
+            return dbHelper.updateCartQuantity(cartId, quantity);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating cart quantity", e);
+            return false;
+        }
     }
 
     /**
      * Remove item from cart
      */
     public boolean removeFromCart(int cartId) {
-        // This is a simplified implementation
-        // In a real app, you would delete the item from the database
-        return true;
+        try {
+            int result = dbHelper.removeFromCart(cartId);
+            return result > 0;
+        } catch (Exception e) {
+            Log.e(TAG, "Error removing from cart", e);
+            return false;
+        }
     }
 
     /**
      * Clear cart for user
      */
     public boolean clearCart(int userId) {
-        // This is a simplified implementation
-        // In a real app, you would delete all items from the cart for the user
-        return true;
+        try {
+            int result = dbHelper.clearCart(userId);
+            return result > 0;
+        } catch (Exception e) {
+            Log.e(TAG, "Error clearing cart", e);
+            return false;
+        }
+    }
+
+    /**
+     * Get cart total
+     */
+    public double getCartTotal(int userId) {
+        try {
+            return dbHelper.getCartTotal(userId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting cart total", e);
+            return 0.0;
+        }
     }
 }

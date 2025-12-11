@@ -122,8 +122,10 @@ public class UserDetailViewActivity extends AppCompatActivity {
         editProfileButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Implement edit profile functionality
-                Toast.makeText(UserDetailViewActivity.this, "Edit Profile clicked", Toast.LENGTH_SHORT).show();
+                // Navigate to edit profile activity
+                Intent intent = new Intent(UserDetailViewActivity.this, EditProfileActivity.class);
+                intent.putExtra("user_id", userId);
+                startActivityForResult(intent, 100);
             }
         });
 

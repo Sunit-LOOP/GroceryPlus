@@ -39,10 +39,11 @@
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_search"
                 android:layout_gravity="center_vertical"
-                app:tint="#757575" />
+                app:tint="#757575"
+                android:contentDescription="Search Icon" />
 
             <EditText
-                android:id="@+id/searchEditText"
+                android:id="@+id/searchEt"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -66,5 +67,18 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:padding="8dp"
         android:clipToPadding="false" />
+
+    <TextView
+        android:id="@+id/noResultsTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No products found"
+        android:textSize="18sp"
+        android:textColor="@android:color/darker_gray"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

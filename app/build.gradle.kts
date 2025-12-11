@@ -39,6 +39,10 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.mpandroidchart)
     implementation(libs.circleimageview)
+    
+    // Stripe Android SDK for future use
+    implementation("com.stripe:stripe-android:20.37.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

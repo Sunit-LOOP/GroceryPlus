@@ -57,6 +57,12 @@
             android:name=".UserSettingViewActivity"
             android:exported="false" />
         <activity
+            android:name=".ProductDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false" />
+        <activity
             android:name=".AdminLoginActivity"
             android:exported="false" />
     </application>

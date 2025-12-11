@@ -3,6 +3,12 @@ package com.sunit.groceryplus;
 import android.content.Context;
 import android.util.Log;
 
+import com.sunit.groceryplus.models.Order;
+import com.sunit.groceryplus.models.OrderItem;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class OrderRepository {
     private static final String TAG = "OrderRepository";
     private DatabaseHelper dbHelper;
@@ -24,29 +30,63 @@ public class OrderRepository {
     }
 
     /**
-     * Get orders for user
+     * Add order item
      */
-    public String[] getUserOrders(int userId) {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return a list of Order objects
-        return new String[]{"Order #1", "Order #2", "Order #3"};
+    public boolean addOrderItem(int orderId, int productId, int quantity, double price) {
+        try {
+            long result = dbHelper.addOrderItem(orderId, productId, quantity, price);
+            return result != -1;
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding order item", e);
+            return false;
+        }
     }
 
     /**
-     * Get order by ID
+     * Get all orders (for admin)
      */
-    public String getOrderById(int orderId) {
-        // This is a simplified implementation
-        // In a real app, you would query the database and return an Order object
-        return "Order Details";
+    public List<Order> getAllOrders() {
+        try {
+            return dbHelper.getAllOrders();
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all orders", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get orders for user
+     */
+    public List<Order> getUserOrders(int userId) {
+        try {
+            return dbHelper.getOrdersByUser(userId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting user orders", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get order items
+     */
+    public List<OrderItem> getOrderItems(int orderId) {
+        try {
+            return dbHelper.getOrderItems(orderId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting order items", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
      * Update order status
      */
     public boolean updateOrderStatus(int orderId, String status) {
-        // This is a simplified implementation
-        // In a real app, you would update the order status in the database
-        return true;
+        try {
+            return dbHelper.updateOrderStatus(orderId, status);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating order status", e);
+            return false;
+        }
     }
 }
