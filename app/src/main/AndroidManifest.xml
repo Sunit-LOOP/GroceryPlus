@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -64,6 +65,42 @@
             android:exported="false" />
         <activity
             android:name=".AdminLoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrderSuccessActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FavoritesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.ProductManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.CategoryManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.OrderManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.CustomerManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.AnalyticsDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.PromotionManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.ReviewsManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.DeliveryPersonnelActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.PaymentTrackingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".admin.AdminMessagesActivity"
             android:exported="false" />
     </application>
 

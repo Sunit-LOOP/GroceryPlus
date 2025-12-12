@@ -5,54 +5,59 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.card.MaterialCardView;
 import com.sunit.groceryplus.models.CartItem;
 import com.sunit.groceryplus.models.Order;
+import com.sunit.groceryplus.network.PaymentIntentRequest;
+import com.sunit.groceryplus.network.PaymentIntentResponse;
+import com.sunit.groceryplus.network.StripeApi;
+import com.stripe.android.PaymentConfiguration;
+import com.stripe.android.paymentsheet.PaymentSheet;
+import com.stripe.android.paymentsheet.PaymentSheetResult;
 
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class PaymentActivity extends AppCompatActivity {
 
     private static final String TAG = "PaymentActivity";
     
-    // Stripe API keys
+    // REPLACE with your actual publishable key
     private static final String STRIPE_PUBLISHABLE_KEY = "pk_test_REPLACE_WITH_YOUR_PUBLISHABLE_KEY";
-    private static final String STRIPE_SECRET_KEY = "sk_test_REPLACE_WITH_YOUR_SECRET_KEY";
     
+    // Backend URL (Use 10.0.2.2 for Android Emulator to access localhost)
+    private static final String BACKEND_URL = "http://10.0.2.2:4567/";
+
     // UI Elements
     private RadioGroup paymentMethodGroup;
-    private RadioButton creditCardRadio;
-    private RadioButton cashOnDeliveryRadio;
+    private MaterialCardView stripeCard, codCard;
     
-    private TextInputLayout cardNumberLayout;
-    private TextInputLayout expiryDateLayout;
-    private TextInputLayout cvvLayout;
-    private TextInputLayout cardholderNameLayout;
-    
-    private TextInputEditText cardNumberEt;
-    private TextInputEditText expiryDateEt;
-    private TextInputEditText cvvEt;
-    private TextInputEditText cardholderNameEt;
-    
-    private TextView totalAmountTv;
+    private TextView totalAmountTv, subtotalAmountTv;
     private Button payNowBtn;
     
     // Data
     private int userId;
     private double totalAmount;
-    private int totalItems;
     private String selectedPaymentMethod = "stripe"; // default
     
     private CartRepository cartRepository;
     private OrderRepository orderRepository;
+
+    // Stripe
+    private PaymentSheet paymentSheet;
+    private String paymentIntentClientSecret;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +67,7 @@ public class PaymentActivity extends AppCompatActivity {
         // Get data from intent
         userId = getIntent().getIntExtra("user_id", -1);
         totalAmount = getIntent().getDoubleExtra("total_amount", 0.0);
-        totalItems = getIntent().getIntExtra("total_items", 0);
+        int totalItems = getIntent().getIntExtra("total_items", 0);
 
         if (userId == -1) {
             Toast.makeText(this, "Error: Invalid user session", Toast.LENGTH_SHORT).show();
@@ -80,145 +85,145 @@ public class PaymentActivity extends AppCompatActivity {
         // Setup payment method selection
         setupPaymentMethodSelection();
 
-        // Set click listeners
-        setClickListeners();
-
         // Display order summary
         displayOrderSummary();
+
+        // Initialize Stripe
+        PaymentConfiguration.init(getApplicationContext(), STRIPE_PUBLISHABLE_KEY);
+        paymentSheet = new PaymentSheet(this, this::onPaymentSheetResult);
+
+        // Set click listeners
+        payNowBtn.setOnClickListener(v -> processPayment());
     }
 
     private void initViews() {
         paymentMethodGroup = findViewById(R.id.paymentMethodGroup);
-        creditCardRadio = findViewById(R.id.creditCardRadio);
-        cashOnDeliveryRadio = findViewById(R.id.cashOnDeliveryRadio);
-        
-        cardNumberLayout = findViewById(R.id.paymentCardNumberLayout);
-        expiryDateLayout = findViewById(R.id.paymentExpiryDateLayout);
-        cvvLayout = findViewById(R.id.paymentCvvLayout);
-        cardholderNameLayout = findViewById(R.id.paymentCardholderNameLayout);
-        
-        cardNumberEt = findViewById(R.id.paymentCardNumber);
-        expiryDateEt = findViewById(R.id.paymentExpiryDate);
-        cvvEt = findViewById(R.id.paymentCvv);
-        cardholderNameEt = findViewById(R.id.paymentCardholderName);
+        stripeCard = findViewById(R.id.stripeCard);
+        codCard = findViewById(R.id.codCard);
         
         totalAmountTv = findViewById(R.id.paymentTotalAmount);
+        subtotalAmountTv = findViewById(R.id.summarySubtotal);
         payNowBtn = findViewById(R.id.paymentPayNowBtn);
+        
+        // Setup Toolbar
+        setSupportActionBar(findViewById(R.id.paymentToolbar));
+        if(getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void setupPaymentMethodSelection() {
-        paymentMethodGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                if (checkedId == R.id.creditCardRadio) {
-                    selectedPaymentMethod = "stripe";
-                    showCardFields();
-                } else if (checkedId == R.id.cashOnDeliveryRadio) {
-                    selectedPaymentMethod = "cod";
-                    hideCardFields();
-                }
+        paymentMethodGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.creditCardRadio) {
+                selectedPaymentMethod = "stripe";
+                highlightCard(stripeCard, true);
+                highlightCard(codCard, false);
+            } else if (checkedId == R.id.cashOnDeliveryRadio) {
+                selectedPaymentMethod = "cod";
+                highlightCard(stripeCard, false);
+                highlightCard(codCard, true);
             }
         });
         
-        // Show card fields by default
-        showCardFields();
+        // Initial state
+        if (selectedPaymentMethod.equals("stripe")) {
+             highlightCard(stripeCard, true);
+             highlightCard(codCard, false);
+        }
     }
-
-    private void showCardFields() {
-        cardNumberLayout.setVisibility(View.VISIBLE);
-        expiryDateLayout.setVisibility(View.VISIBLE);
-        cvvLayout.setVisibility(View.VISIBLE);
-        cardholderNameLayout.setVisibility(View.VISIBLE);
-    }
-
-    private void hideCardFields() {
-        cardNumberLayout.setVisibility(View.GONE);
-        expiryDateLayout.setVisibility(View.GONE);
-        cvvLayout.setVisibility(View.GONE);
-        cardholderNameLayout.setVisibility(View.GONE);
+    
+    private void highlightCard(MaterialCardView card, boolean isSelected) {
+        if (isSelected) {
+            card.setStrokeColor(getResources().getColor(android.R.color.holo_green_dark));
+            card.setStrokeWidth(4);
+        } else {
+            card.setStrokeColor(getResources().getColor(android.R.color.darker_gray));
+            card.setStrokeWidth(2);
+        }
     }
 
     private void displayOrderSummary() {
-        totalAmountTv.setText("Total Amount: Rs. " + String.format("%.2f", totalAmount));
-    }
-
-    private void setClickListeners() {
-        payNowBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                processPayment();
-            }
-        });
+        double deliveryFee = 50.0;
+        double subtotal = totalAmount > deliveryFee ? totalAmount - deliveryFee : totalAmount;
+        
+        // If the passed totalAmount doesn't account for delivery logic, we just display it.
+        // Assuming totalAmount is the final payable amount.
+        
+        subtotalAmountTv.setText("₹" + String.format("%.2f", totalAmount)); // Simplified for this demo
+        totalAmountTv.setText("₹" + String.format("%.2f", totalAmount));
+        payNowBtn.setText("Pay ₹" + String.format("%.2f", totalAmount));
     }
 
     private void processPayment() {
         if (selectedPaymentMethod.equals("stripe")) {
-            processStripePayment();
+            fetchPaymentIntentAndPay();
         } else {
             processCODPayment();
         }
     }
 
-    private void processStripePayment() {
-        // Validate card details
-        String cardNumber = cardNumberEt.getText().toString().trim();
-        String expiryDate = expiryDateEt.getText().toString().trim();
-        String cvv = cvvEt.getText().toString().trim();
-        String cardholderName = cardholderNameEt.getText().toString().trim();
-
-        if (cardNumber.isEmpty()) {
-            cardNumberEt.setError("Card number is required");
-            cardNumberEt.requestFocus();
-            return;
-        }
-
-        if (cardNumber.length() < 13 || cardNumber.length() > 19) {
-            cardNumberEt.setError("Invalid card number");
-            cardNumberEt.requestFocus();
-            return;
-        }
-
-        if (expiryDate.isEmpty()) {
-            expiryDateEt.setError("Expiry date is required");
-            expiryDateEt.requestFocus();
-            return;
-        }
-
-        if (cvv.isEmpty()) {
-            cvvEt.setError("CVV is required");
-            cvvEt.requestFocus();
-            return;
-        }
-
-        if (cvv.length() < 3) {
-            cvvEt.setError("Invalid CVV");
-            cvvEt.requestFocus();
-            return;
-        }
-
-        if (cardholderName.isEmpty()) {
-            cardholderNameEt.setError("Cardholder name is required");
-            cardholderNameEt.requestFocus();
-            return;
-        }
-
-        // TODO: Integrate with Stripe SDK
-        // For now, simulate successful payment
-        Toast.makeText(this, "Processing Stripe payment...", Toast.LENGTH_SHORT).show();
-        
-        // Simulate payment processing
+    private void fetchPaymentIntentAndPay() {
         payNowBtn.setEnabled(false);
         payNowBtn.setText("Processing...");
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BACKEND_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        StripeApi stripeApi = retrofit.create(StripeApi.class);
         
-        // In a real app, you would call Stripe API here
-        // For now, we'll simulate success after a delay
-        new android.os.Handler().postDelayed(new Runnable() {
+        // Convert amount to smallest currency unit (e.g. cents/paisa)
+        int amountInSmallestUnit = (int) (totalAmount * 100);
+        
+        PaymentIntentRequest request = new PaymentIntentRequest(amountInSmallestUnit, "npr");
+
+        stripeApi.createPaymentIntent(request).enqueue(new Callback<PaymentIntentResponse>() {
             @Override
-            public void run() {
-                // Simulate successful payment
-                createOrder("stripe");
+            public void onResponse(@NonNull Call<PaymentIntentResponse> call, @NonNull Response<PaymentIntentResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    paymentIntentClientSecret = response.body().getClientSecret();
+                    presentPaymentSheet();
+                } else {
+                    payNowBtn.setEnabled(true);
+                    payNowBtn.setText("Pay Now");
+                    Toast.makeText(PaymentActivity.this, "Failed to initialize payment", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Backend Response Error: " + response.code());
+                }
             }
-        }, 2000);
+
+            @Override
+            public void onFailure(@NonNull Call<PaymentIntentResponse> call, @NonNull Throwable t) {
+                payNowBtn.setEnabled(true);
+                payNowBtn.setText("Pay Now");
+                Toast.makeText(PaymentActivity.this, "Network error: Make sure backend is running", Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Network Error", t);
+            }
+        });
+    }
+
+    private void presentPaymentSheet() {
+        payNowBtn.setText("Pay Now"); // Reset
+        payNowBtn.setEnabled(true);
+        
+        if (paymentIntentClientSecret != null) {
+             PaymentSheet.Configuration configuration = new PaymentSheet.Configuration.Builder("GroceryPlus")
+                    .merchantDisplayName("GroceryPlus Inc.")
+                    .build();
+            paymentSheet.presentWithPaymentIntent(paymentIntentClientSecret, configuration);
+        }
+    }
+
+    private void onPaymentSheetResult(PaymentSheetResult paymentSheetResult) {
+        if (paymentSheetResult instanceof PaymentSheetResult.Completed) {
+            createOrder("stripe");
+        } else if (paymentSheetResult instanceof PaymentSheetResult.Canceled) {
+            Toast.makeText(this, "Payment Canceled", Toast.LENGTH_SHORT).show();
+        } else if (paymentSheetResult instanceof PaymentSheetResult.Failed) {
+            Throwable error = ((PaymentSheetResult.Failed) paymentSheetResult).getError();
+            Toast.makeText(this, "Payment Failed: " + error.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void processCODPayment() {
@@ -241,7 +246,7 @@ public class PaymentActivity extends AppCompatActivity {
             long orderId = orderRepository.createOrder(userId, totalAmount, Order.STATUS_PENDING);
             
             if (orderId != -1) {
-                // Add order items
+                // Add order items (Simulated transaction logic)
                 boolean allItemsAdded = true;
                 for (CartItem item : cartItems) {
                     boolean success = orderRepository.addOrderItem(
@@ -257,47 +262,35 @@ public class PaymentActivity extends AppCompatActivity {
                 }
                 
                 if (allItemsAdded) {
-                    // Clear cart
                     cartRepository.clearCart(userId);
                     
-                    // Show success message
                     String message = paymentMethod.equals("stripe") 
                         ? "Payment successful! Order placed." 
                         : "Order placed successfully! Pay on delivery.";
                     
                     Toast.makeText(this, message, Toast.LENGTH_LONG).show();
                     
-                    // Navigate back to home
-                    Intent intent = new Intent(PaymentActivity.this, UserHomeActivity.class);
+                    // Navigate to Order Success Screen
+                    Intent intent = new Intent(PaymentActivity.this, OrderSuccessActivity.class);
                     intent.putExtra("user_id", userId);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                     finish();
                 } else {
                     Toast.makeText(this, "Error creating order items", Toast.LENGTH_SHORT).show();
-                    payNowBtn.setEnabled(true);
-                    payNowBtn.setText("Pay Now");
                 }
             } else {
                 Toast.makeText(this, "Failed to create order", Toast.LENGTH_SHORT).show();
-                payNowBtn.setEnabled(true);
-                payNowBtn.setText("Pay Now");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error creating order", e);
             Toast.makeText(this, "Error processing payment", Toast.LENGTH_SHORT).show();
-            payNowBtn.setEnabled(true);
-            payNowBtn.setText("Pay Now");
         }
     }
-
-    /**
-     * Method to update Stripe keys
-     * Call this method with your actual Stripe keys
-     */
-    public static void setStripeKeys(String publishableKey, String secretKey) {
-        // In a real app, you would store these securely
-        // For now, this is just a placeholder
-        Log.d(TAG, "Stripe keys updated");
+    
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 }

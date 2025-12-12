@@ -112,9 +112,9 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- View Orders -->
+                <!-- Manage Categories -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/viewOrdersCard"
+                    android:id="@+id/manageCategoriesCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
@@ -133,13 +133,13 @@
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@drawable/order_icon"
+                            android:src="@drawable/category_icon"
                             android:layout_marginBottom="8dp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="View Orders"
+                            android:text="Manage Categories"
                             android:textSize="14sp"
                             android:textAlignment="center"
                             android:textColor="#333333" />

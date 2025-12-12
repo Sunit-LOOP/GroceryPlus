@@ -14,7 +14,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class UserSettingViewActivity extends AppCompatActivity {
 
-    private ImageButton backButton;
     private SwitchMaterial notificationSwitch;
     private SwitchMaterial darkModeSwitch;
     private MaterialCardView adminLoginCard;
@@ -35,8 +34,8 @@ public class UserSettingViewActivity extends AppCompatActivity {
     private void initViews() {
         Toolbar toolbar = findViewById(R.id.settingsToolbar);
         setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
 
-        backButton = findViewById(R.id.backButton);
         notificationSwitch = findViewById(R.id.notificationSwitch);
         darkModeSwitch = findViewById(R.id.darkModeSwitch);
         adminLoginCard = findViewById(R.id.adminLoginCard);
@@ -44,13 +43,6 @@ public class UserSettingViewActivity extends AppCompatActivity {
     }
 
     private void setClickListeners() {
-        backButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Close the activity and go back
-                finish();
-            }
-        });
 
         notificationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {

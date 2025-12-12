@@ -90,4 +90,16 @@ public class UserRepository {
     public boolean isAdmin(User user) {
         return user != null && user.isAdmin();
     }
+
+    /**
+     * Get all users
+     */
+    public java.util.List<User> getAllUsers() {
+        try {
+            return dbHelper.getAllUsers();
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all users", e);
+            return new java.util.ArrayList<>();
+        }
+    }
 }

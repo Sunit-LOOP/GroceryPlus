@@ -18,6 +18,7 @@ import static com.sunit.groceryplus.DatabaseContract.OrderItemEntry;
 import static com.sunit.groceryplus.DatabaseContract.ProductEntry;
 import static com.sunit.groceryplus.DatabaseContract.UserEntry;
 
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
@@ -41,6 +42,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_CREATE_CART_ITEMS_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_FAVORITES_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_MESSAGES_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_PROMOTIONS_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_REVIEWS_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_DELIVERY_PERSONNEL_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_PAYMENTS_TABLE);
 
         // Insert default admin user
         insertDefaultAdmin(db);
@@ -57,6 +62,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_DELETE_CART_ITEMS_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_FAVORITES_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_MESSAGES_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_PROMOTIONS_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_REVIEWS_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_DELIVERY_PERSONNEL_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_PAYMENTS_TABLE);
 
         onCreate(db);
     }
@@ -310,6 +319,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         
         return exists;
+    }
+
+    /**
+     * Get all users
+     */
+    public java.util.List<User> getAllUsers() {
+        java.util.List<User> users = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String query = "SELECT * FROM " + DatabaseContract.UserEntry.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                try {
+                    int userId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_ID));
+                    String userName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME));
+                    String userEmail = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_EMAIL));
+                    String userPhone = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_PHONE));
+                    String userType = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_TYPE));
+                    
+                    User user = new User(userId, userName, userEmail, userPhone, userType);
+                    users.add(user);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing user", e);
+                }
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        
+        return users;
     }
     
     /**
@@ -1053,5 +1093,151 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         long productId = db.insert(DatabaseContract.ProductEntry.TABLE_NAME, null, values);
         db.close();
         return productId;
+    }
+    // Analytics Methods
+
+    public double getTotalRevenue() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        double totalRevenue = 0;
+        String query = "SELECT SUM(" + OrderEntry.COLUMN_NAME_TOTAL_AMOUNT + ") FROM " + OrderEntry.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.moveToFirst()) {
+            totalRevenue = cursor.getDouble(0);
+        }
+        cursor.close();
+        return totalRevenue;
+    }
+
+    public int getOrderCountByStatus(String status) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int count = 0;
+        String query = "SELECT COUNT(*) FROM " + OrderEntry.TABLE_NAME + " WHERE " + OrderEntry.COLUMN_NAME_STATUS + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{status});
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+    
+    public int getTotalOrdersCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int count = 0;
+        String query = "SELECT COUNT(*) FROM " + OrderEntry.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public int getTotalProductsCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int count = 0;
+        String query = "SELECT COUNT(*) FROM " + ProductEntry.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public int getTotalCustomersCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int count = 0;
+        String query = "SELECT COUNT(*) FROM " + UserEntry.TABLE_NAME + " WHERE " + UserEntry.COLUMN_NAME_USER_TYPE + " != 'admin'";
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    // ==================== PROMOTION METHODS ====================
+
+    public long addPromotion(String code, double discount, String validUntil) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_CODE, code);
+        values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE, discount);
+        values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL, validUntil);
+        return db.insert(DatabaseContract.PromotionEntry.TABLE_NAME, null, values);
+    }
+    
+    public Cursor getAllPromotions() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(DatabaseContract.PromotionEntry.TABLE_NAME, null, null, null, null, null, null);
+    }
+
+    public boolean deletePromotion(int promoId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(DatabaseContract.PromotionEntry.TABLE_NAME, 
+                DatabaseContract.PromotionEntry.COLUMN_NAME_PROMO_ID + " = ?", 
+                new String[]{String.valueOf(promoId)}) > 0;
+    }
+
+    // ==================== REVIEW METHODS ====================
+    
+    public Cursor getAllReviews() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT r.*, p." + DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_NAME + ", u." + DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME +
+                       " FROM " + DatabaseContract.ReviewEntry.TABLE_NAME + " r " +
+                       " LEFT JOIN " + DatabaseContract.ProductEntry.TABLE_NAME + " p ON r." + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = p." + DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_ID +
+                       " LEFT JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " u ON r." + DatabaseContract.ReviewEntry.COLUMN_NAME_USER_ID + " = u." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID;
+        return db.rawQuery(query, null);
+    }
+    
+    public boolean deleteReview(int reviewId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(DatabaseContract.ReviewEntry.TABLE_NAME,
+                DatabaseContract.ReviewEntry.COLUMN_NAME_REVIEW_ID + " = ?",
+                new String[]{String.valueOf(reviewId)}) > 0;
+    }
+
+    // ==================== DELIVERY PERSONNEL METHODS ====================
+    
+    public long addDeliveryPerson(String name, String phone, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_NAME, name);
+        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_PHONE, phone);
+        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_STATUS, status);
+        return db.insert(DatabaseContract.DeliveryPersonEntry.TABLE_NAME, null, values);
+    }
+    
+    public Cursor getAllDeliveryPersonnel() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(DatabaseContract.DeliveryPersonEntry.TABLE_NAME, null, null, null, null, null, null);
+    }
+    
+    public boolean updateDeliveryPersonStatus(int personId, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_STATUS, status);
+        return db.update(DatabaseContract.DeliveryPersonEntry.TABLE_NAME, values,
+                DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_PERSON_ID + " = ?",
+                new String[]{String.valueOf(personId)}) > 0;
+    }
+    
+    // ==================== PAYMENT METHODS ====================
+    
+    public Cursor getAllPayments() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(DatabaseContract.PaymentEntry.TABLE_NAME, null, null, null, null, null, DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_DATE + " DESC");
+    }
+
+    // ==================== MESSAGING METHODS ====================
+    
+    public Cursor getAllMessages() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        // Simplified: just get all messages for now, typically would filter by user interactions
+        String query = "SELECT m.*, s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME + " as sender_name" +
+                       " FROM " + DatabaseContract.MessageEntry.TABLE_NAME + " m " +
+                       " LEFT JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " s ON m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID +
+                       " ORDER BY " + DatabaseContract.MessageEntry.COLUMN_NAME_CREATED_AT + " DESC";
+        return db.rawQuery(query, null);
     }
 }

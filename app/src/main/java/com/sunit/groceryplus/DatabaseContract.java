@@ -91,6 +91,43 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_CREATED_AT = "created_at";
     }
 
+    public static class PromotionEntry implements BaseColumns {
+        public static final String TABLE_NAME = "promotions";
+        public static final String COLUMN_NAME_PROMO_ID = "promo_id";
+        public static final String COLUMN_NAME_CODE = "code";
+        public static final String COLUMN_NAME_DISCOUNT_PERCENTAGE = "discount_percentage";
+        public static final String COLUMN_NAME_VALID_UNTIL = "valid_until";
+        public static final String COLUMN_NAME_IS_ACTIVE = "is_active";
+    }
+
+    public static class ReviewEntry implements BaseColumns {
+        public static final String TABLE_NAME = "reviews";
+        public static final String COLUMN_NAME_REVIEW_ID = "review_id";
+        public static final String COLUMN_NAME_USER_ID = "user_id";
+        public static final String COLUMN_NAME_PRODUCT_ID = "product_id";
+        public static final String COLUMN_NAME_RATING = "rating";
+        public static final String COLUMN_NAME_COMMENT = "comment";
+        public static final String COLUMN_NAME_CREATED_AT = "created_at";
+    }
+
+    public static class DeliveryPersonEntry implements BaseColumns {
+        public static final String TABLE_NAME = "delivery_personnel";
+        public static final String COLUMN_NAME_PERSON_ID = "person_id";
+        public static final String COLUMN_NAME_NAME = "name";
+        public static final String COLUMN_NAME_PHONE = "phone";
+        public static final String COLUMN_NAME_STATUS = "status";
+    }
+
+    public static class PaymentEntry implements BaseColumns {
+        public static final String TABLE_NAME = "payments";
+        public static final String COLUMN_NAME_PAYMENT_ID = "payment_id";
+        public static final String COLUMN_NAME_ORDER_ID = "order_id";
+        public static final String COLUMN_NAME_AMOUNT = "amount";
+        public static final String COLUMN_NAME_PAYMENT_METHOD = "payment_method";
+        public static final String COLUMN_NAME_TRANSACTION_ID = "transaction_id";
+        public static final String COLUMN_NAME_PAYMENT_DATE = "payment_date";
+    }
+
     // SQL statements to create tables
     public static final String SQL_CREATE_USERS_TABLE =
             "CREATE TABLE " + UserEntry.TABLE_NAME + " (" +
@@ -167,6 +204,42 @@ public final class DatabaseContract {
                     "FOREIGN KEY(" + MessageEntry.COLUMN_NAME_SENDER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
                     "FOREIGN KEY(" + MessageEntry.COLUMN_NAME_RECEIVER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + "))";
 
+    public static final String SQL_CREATE_PROMOTIONS_TABLE =
+            "CREATE TABLE " + PromotionEntry.TABLE_NAME + " (" +
+                    PromotionEntry.COLUMN_NAME_PROMO_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    PromotionEntry.COLUMN_NAME_CODE + " TEXT UNIQUE," +
+                    PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE + " REAL," +
+                    PromotionEntry.COLUMN_NAME_VALID_UNTIL + " TEXT," +
+                    PromotionEntry.COLUMN_NAME_IS_ACTIVE + " INTEGER DEFAULT 1)";
+
+    public static final String SQL_CREATE_REVIEWS_TABLE =
+            "CREATE TABLE " + ReviewEntry.TABLE_NAME + " (" +
+                    ReviewEntry.COLUMN_NAME_REVIEW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    ReviewEntry.COLUMN_NAME_USER_ID + " INTEGER," +
+                    ReviewEntry.COLUMN_NAME_PRODUCT_ID + " INTEGER," +
+                    ReviewEntry.COLUMN_NAME_RATING + " INTEGER," +
+                    ReviewEntry.COLUMN_NAME_COMMENT + " TEXT," +
+                    ReviewEntry.COLUMN_NAME_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY(" + ReviewEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
+                    "FOREIGN KEY(" + ReviewEntry.COLUMN_NAME_PRODUCT_ID + ") REFERENCES " + ProductEntry.TABLE_NAME + "(" + ProductEntry.COLUMN_NAME_PRODUCT_ID + "))";
+
+    public static final String SQL_CREATE_DELIVERY_PERSONNEL_TABLE =
+            "CREATE TABLE " + DeliveryPersonEntry.TABLE_NAME + " (" +
+                    DeliveryPersonEntry.COLUMN_NAME_PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    DeliveryPersonEntry.COLUMN_NAME_NAME + " TEXT," +
+                    DeliveryPersonEntry.COLUMN_NAME_PHONE + " TEXT," +
+                    DeliveryPersonEntry.COLUMN_NAME_STATUS + " TEXT)";
+
+    public static final String SQL_CREATE_PAYMENTS_TABLE =
+            "CREATE TABLE " + PaymentEntry.TABLE_NAME + " (" +
+                    PaymentEntry.COLUMN_NAME_PAYMENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    PaymentEntry.COLUMN_NAME_ORDER_ID + " INTEGER," +
+                    PaymentEntry.COLUMN_NAME_AMOUNT + " REAL," +
+                    PaymentEntry.COLUMN_NAME_PAYMENT_METHOD + " TEXT," +
+                    PaymentEntry.COLUMN_NAME_TRANSACTION_ID + " TEXT," +
+                    PaymentEntry.COLUMN_NAME_PAYMENT_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY(" + PaymentEntry.COLUMN_NAME_ORDER_ID + ") REFERENCES " + OrderEntry.TABLE_NAME + "(" + OrderEntry.COLUMN_NAME_ORDER_ID + "))";
+
     // SQL statements to delete tables
     public static final String SQL_DELETE_USERS_TABLE =
             "DROP TABLE IF EXISTS " + UserEntry.TABLE_NAME;
@@ -191,4 +264,16 @@ public final class DatabaseContract {
 
     public static final String SQL_DELETE_MESSAGES_TABLE =
             "DROP TABLE IF EXISTS " + MessageEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_PROMOTIONS_TABLE =
+            "DROP TABLE IF EXISTS " + PromotionEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_REVIEWS_TABLE =
+            "DROP TABLE IF EXISTS " + ReviewEntry.TABLE_NAME;
+            
+    public static final String SQL_DELETE_DELIVERY_PERSONNEL_TABLE =
+            "DROP TABLE IF EXISTS " + DeliveryPersonEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_PAYMENTS_TABLE =
+            "DROP TABLE IF EXISTS " + PaymentEntry.TABLE_NAME;
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -36,7 +37,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     @NonNull
     @Override
     public CategoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.row_category, parent, false);
+        // Updated to use modern layout
+        View view = LayoutInflater.from(context).inflate(R.layout.row_category_card_modern, parent, false);
         return new CategoryViewHolder(view);
     }
 
@@ -58,10 +60,12 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
     class CategoryViewHolder extends RecyclerView.ViewHolder {
         TextView categoryNameTv;
+        ImageView categoryIcon;
 
         public CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
-            categoryNameTv = itemView.findViewById(R.id.categoryNameTv);
+            categoryNameTv = itemView.findViewById(R.id.categoryName);
+            categoryIcon = itemView.findViewById(R.id.categoryIcon);
 
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
@@ -73,6 +77,14 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
         public void bind(Category category) {
             categoryNameTv.setText(category.getCategoryName());
+            // In future, set icon based on category logic or image loading
+            // For now, it stays as default icon from layout or basic mapping
+            if ("Fruits".equalsIgnoreCase(category.getCategoryName())) {
+                categoryIcon.setImageResource(R.drawable.category_icon); 
+            } else if ("Vegetables".equalsIgnoreCase(category.getCategoryName())) {
+                 categoryIcon.setImageResource(R.drawable.category_icon);
+            }
+             // Fallback for others is handled by layout srcCompat
         }
     }
 }

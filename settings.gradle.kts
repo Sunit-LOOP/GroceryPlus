@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "GroceryPLus"
-include(":app")
+include(":app", ":backend")
