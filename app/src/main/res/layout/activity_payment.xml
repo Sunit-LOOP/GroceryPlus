@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="#FAFAFA">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -33,7 +34,8 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -133,17 +135,40 @@
                     app:strokeColor="#4CAF50"
                     app:strokeWidth="2dp">
 
-                    <RadioButton
-                        android:id="@+id/creditCardRadio"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Credit or Debit Card"
-                        android:textSize="16sp"
-                        android:padding="16dp"
-                        android:checked="true"
-                        android:layoutDirection="rtl"
-                        android:textAlignment="textStart"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/stripe_icon"
+                            android:contentDescription="Stripe"
+                            android:layout_marginEnd="16dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Stripe Payment"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#1A1A1A"/>
+
+                        <RadioButton
+                            android:id="@+id/creditCardRadio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:clickable="false"
+                            android:focusable="false"/>
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+
 
                 <!-- COD Option -->
                 <com.google.android.material.card.MaterialCardView
@@ -155,15 +180,36 @@
                     app:strokeColor="#E0E0E0"
                     app:strokeWidth="1dp">
 
-                    <RadioButton
-                        android:id="@+id/cashOnDeliveryRadio"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Cash on Delivery"
-                        android:textSize="16sp"
-                        android:padding="16dp"
-                        android:layoutDirection="rtl"
-                        android:textAlignment="textStart"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/cash_on_delivery_icon"
+                            android:contentDescription="Cash on Delivery"
+                            android:layout_marginEnd="16dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Cash on Delivery"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#1A1A1A"/>
+
+                        <RadioButton
+                            android:id="@+id/cashOnDeliveryRadio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:focusable="false"/>
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </RadioGroup>
 
@@ -273,7 +319,6 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
         android:background="#FFFFFF"
         android:elevation="16dp"
         android:padding="16dp">
@@ -291,4 +336,7 @@
             
     </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <!-- Custom Bottom Navigation -->
+    <include layout="@layout/bottom_navigation_custom" />
+
+</LinearLayout>

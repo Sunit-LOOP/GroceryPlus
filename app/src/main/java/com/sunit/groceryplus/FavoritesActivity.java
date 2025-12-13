@@ -56,6 +56,21 @@ public class FavoritesActivity extends AppCompatActivity {
 
         // Load favorites
         loadFavorites();
+        
+        // Setup Toolbar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Favorites");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -72,21 +87,7 @@ public class FavoritesActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         favoritesRv.setLayoutManager(new GridLayoutManager(this, 2));
-        productAdapter = new ProductAdapter(this, favoriteProducts, new ProductAdapter.OnProductClickListener() {
-            @Override
-            public void onProductClick(Product product) {
-                // Navigate to product detail
-                Intent intent = new Intent(FavoritesActivity.this, ProductDetailActivity.class);
-                intent.putExtra("product_id", product.getProductId());
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-
-            @Override
-            public void onAddToCartClick(Product product) {
-                addToCart(product);
-            }
-        });
+        productAdapter = new ProductAdapter(this, favoriteProducts, userId);
         favoritesRv.setAdapter(productAdapter);
     }
 

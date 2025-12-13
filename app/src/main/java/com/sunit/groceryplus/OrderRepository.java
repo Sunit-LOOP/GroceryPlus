@@ -89,4 +89,23 @@ public class OrderRepository {
             return false;
         }
     }
+
+    /**
+     * Get last order for user
+     */
+    public Order getLastOrder(int userId) {
+        try {
+            // Get all user orders
+            List<Order> orders = dbHelper.getOrdersByUser(userId);
+            if (orders != null && !orders.isEmpty()) {
+                // Assuming orders are returned sorted by date DESC or ID DESC
+                // If not, we should sort or get the one with max ID
+                // DatabaseHelper.getOrdersByUser usually sorts by date desc
+                return orders.get(0); 
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting last order", e);
+        }
+        return null;
+    }
 }

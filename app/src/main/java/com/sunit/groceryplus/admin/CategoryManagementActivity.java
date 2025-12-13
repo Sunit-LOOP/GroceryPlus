@@ -88,7 +88,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
         // Populate if editing
         if (category != null) {
             nameEt.setText(category.getCategoryName());
-            descriptionEt.setText(category.getDescription());
+            descriptionEt.setText(category.getCategoryDescription());
         }
 
         cancelBtn.setOnClickListener(v -> dialog.dismiss());

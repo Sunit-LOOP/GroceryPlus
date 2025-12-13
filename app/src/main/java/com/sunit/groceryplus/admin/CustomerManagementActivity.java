@@ -9,9 +9,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.sunit.groceryplus.R;
+import com.sunit.groceryplus.User;
 import com.sunit.groceryplus.UserRepository;
 import com.sunit.groceryplus.adapters.AdminCustomerAdapter;
-import com.sunit.groceryplus.models.User;
 
 import java.util.ArrayList;
 import java.util.List;

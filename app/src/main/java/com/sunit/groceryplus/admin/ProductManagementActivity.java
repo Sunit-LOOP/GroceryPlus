@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.sunit.groceryplus.CategoryRepository;
@@ -31,55 +30,66 @@ public class ProductManagementActivity extends AppCompatActivity {
 
     private RecyclerView productsRv;
     private FloatingActionButton addProductFab;
-    private AdminProductAdapter adapter;
+    
     private ProductRepository productRepository;
     private CategoryRepository categoryRepository;
+    private AdminProductAdapter adapter;
     private List<Category> categories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_management);
-
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-
+        
+        // Enable back button
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Manage Products");
+        }
+        
+        initViews();
+        initRepositories();
+        loadCategories();
+        setupRecyclerView();
+        setClickListeners();
+        loadProducts();
+    }
+    
+    private void initViews() {
         productsRv = findViewById(R.id.productsRv);
         addProductFab = findViewById(R.id.addProductFab);
-
+    }
+    
+    private void initRepositories() {
         productRepository = new ProductRepository(this);
         categoryRepository = new CategoryRepository(this);
-        categories = categoryRepository.getAllCategories();
-
-        setupRecyclerView();
-        loadProducts();
-
-        addProductFab.setOnClickListener(v -> showProductDialog(null));
     }
-
+    
+    private void loadCategories() {
+        categories = categoryRepository.getAllCategories();
+    }
+    
     private void setupRecyclerView() {
         productsRv.setLayoutManager(new GridLayoutManager(this, 1)); // Single column implementation of grid
-        adapter = new AdminProductAdapter(this, new ArrayList<>(), new AdminProductAdapter.OnProductActionListener() {
-            @Override
-            public void onEditClick(Product product) {
-                showProductDialog(product);
-            }
-
-            @Override
-            public void onDeleteClick(Product product) {
-                showDeleteConfirmationDialog(product);
-            }
-        });
+        // Updated to remove the listener since the adapter now handles actions internally
+        adapter = new AdminProductAdapter(this, new ArrayList<>(), productRepository, categories, this);
         productsRv.setAdapter(adapter);
     }
-
+    
     private void loadProducts() {
         List<Product> products = productRepository.getAllProducts();
         adapter.updateProducts(products);
     }
-
+    
+    private void setClickListeners() {
+        addProductFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showProductDialog(null);
+            }
+        });
+    }
+    
     private void showProductDialog(Product product) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_product, null);

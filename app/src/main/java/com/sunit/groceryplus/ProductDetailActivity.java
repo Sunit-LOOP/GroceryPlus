@@ -150,13 +150,19 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private int getImageResource(String imageName) {
         if (imageName == null || imageName.isEmpty()) {
-            return 0;
+            return R.drawable.product_icon; // Better default
+        }
+        
+        // Try to find a specific image based on product name if no image name is provided
+        if (imageName.equals("ic_launcher_foreground")) {
+            // This is a fallback, try to assign specific images
+            return R.drawable.product_icon;
         }
         
         try {
             return getResources().getIdentifier(imageName, "drawable", getPackageName());
         } catch (Exception e) {
-            return 0;
+            return R.drawable.product_icon; // Better fallback
         }
     }
 }

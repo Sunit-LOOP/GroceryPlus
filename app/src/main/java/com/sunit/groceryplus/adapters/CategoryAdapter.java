@@ -77,14 +77,28 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
         public void bind(Category category) {
             categoryNameTv.setText(category.getCategoryName());
-            // In future, set icon based on category logic or image loading
-            // For now, it stays as default icon from layout or basic mapping
-            if ("Fruits".equalsIgnoreCase(category.getCategoryName())) {
-                categoryIcon.setImageResource(R.drawable.category_icon); 
-            } else if ("Vegetables".equalsIgnoreCase(category.getCategoryName())) {
+            
+            String name = category.getCategoryName();
+            if (name == null) {
+                categoryIcon.setImageResource(R.drawable.category_icon);
+                return;
+            }
+
+            if (name.equalsIgnoreCase("Vegetables")) {
+                categoryIcon.setImageResource(R.drawable.green_vegetable);
+            } else if (name.equalsIgnoreCase("Fruits")) {
+                categoryIcon.setImageResource(R.drawable.apple); // Updated to use Apple image
+            } else if (name.equalsIgnoreCase("Dairy") || name.equalsIgnoreCase("Milk")) {
+                categoryIcon.setImageResource(R.drawable.bottle_milk);
+            } else if (name.equalsIgnoreCase("Beverages") || name.equalsIgnoreCase("Drinks")) {
+                 categoryIcon.setImageResource(R.drawable.juice_bottle); // Updated to use Juice image
+            } else if (name.equalsIgnoreCase("Bakery") || name.equalsIgnoreCase("Bread")) {
+                categoryIcon.setImageResource(R.drawable.bread); // Updated to use Bread image
+            } else if (name.equalsIgnoreCase("Staples") || name.contains("Rice") || name.contains("Oil")) {
+                categoryIcon.setImageResource(R.drawable.rice_sack); // Updated to use Rice image
+            } else {
                  categoryIcon.setImageResource(R.drawable.category_icon);
             }
-             // Fallback for others is handled by layout srcCompat
         }
     }
 }

@@ -9,40 +9,24 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.card.MaterialCardView;
 import com.sunit.groceryplus.models.CartItem;
 import com.sunit.groceryplus.models.Order;
-import com.sunit.groceryplus.network.PaymentIntentRequest;
-import com.sunit.groceryplus.network.PaymentIntentResponse;
-import com.sunit.groceryplus.network.StripeApi;
-import com.stripe.android.PaymentConfiguration;
-import com.stripe.android.paymentsheet.PaymentSheet;
-import com.stripe.android.paymentsheet.PaymentSheetResult;
 
 import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class PaymentActivity extends AppCompatActivity {
 
     private static final String TAG = "PaymentActivity";
-    
-    // REPLACE with your actual publishable key
-    private static final String STRIPE_PUBLISHABLE_KEY = "pk_test_REPLACE_WITH_YOUR_PUBLISHABLE_KEY";
-    
-    // Backend URL (Use 10.0.2.2 for Android Emulator to access localhost)
-    private static final String BACKEND_URL = "http://10.0.2.2:4567/";
+    private static final int FAKE_PAYMENT_REQUEST_CODE = 1001;
 
     // UI Elements
     private RadioGroup paymentMethodGroup;
     private MaterialCardView stripeCard, codCard;
+    private android.widget.RadioButton paymentStripeRb, paymentCodRb;
     
     private TextView totalAmountTv, subtotalAmountTv;
     private Button payNowBtn;
@@ -55,10 +39,6 @@ public class PaymentActivity extends AppCompatActivity {
     private CartRepository cartRepository;
     private OrderRepository orderRepository;
 
-    // Stripe
-    private PaymentSheet paymentSheet;
-    private String paymentIntentClientSecret;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +46,11 @@ public class PaymentActivity extends AppCompatActivity {
 
         // Get data from intent
         userId = getIntent().getIntExtra("user_id", -1);
+        if (userId == -1) {
+            android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            userId = sharedPreferences.getInt("userId", -1);
+        }
+
         totalAmount = getIntent().getDoubleExtra("total_amount", 0.0);
         int totalItems = getIntent().getIntExtra("total_items", 0);
 
@@ -88,10 +73,6 @@ public class PaymentActivity extends AppCompatActivity {
         // Display order summary
         displayOrderSummary();
 
-        // Initialize Stripe
-        PaymentConfiguration.init(getApplicationContext(), STRIPE_PUBLISHABLE_KEY);
-        paymentSheet = new PaymentSheet(this, this::onPaymentSheetResult);
-
         // Set click listeners
         payNowBtn.setOnClickListener(v -> processPayment());
     }
@@ -100,6 +81,8 @@ public class PaymentActivity extends AppCompatActivity {
         paymentMethodGroup = findViewById(R.id.paymentMethodGroup);
         stripeCard = findViewById(R.id.stripeCard);
         codCard = findViewById(R.id.codCard);
+        paymentStripeRb = findViewById(R.id.creditCardRadio);
+        paymentCodRb = findViewById(R.id.cashOnDeliveryRadio);
         
         totalAmountTv = findViewById(R.id.paymentTotalAmount);
         subtotalAmountTv = findViewById(R.id.summarySubtotal);
@@ -114,22 +97,52 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void setupPaymentMethodSelection() {
-        paymentMethodGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.creditCardRadio) {
-                selectedPaymentMethod = "stripe";
-                highlightCard(stripeCard, true);
-                highlightCard(codCard, false);
-            } else if (checkedId == R.id.cashOnDeliveryRadio) {
-                selectedPaymentMethod = "cod";
-                highlightCard(stripeCard, false);
-                highlightCard(codCard, true);
-            }
-        });
+        View.OnClickListener stripeListener = v -> selectStripe();
+        View.OnClickListener codListener = v -> selectCod();
+        
+        stripeCard.setOnClickListener(stripeListener);
+        paymentStripeRb.setOnClickListener(stripeListener);
+        
+        codCard.setOnClickListener(codListener);
+        paymentCodRb.setOnClickListener(codListener);
         
         // Initial state
         if (selectedPaymentMethod.equals("stripe")) {
-             highlightCard(stripeCard, true);
-             highlightCard(codCard, false);
+             selectStripe();
+        } else {
+             selectCod();
+        }
+    }
+
+    private void selectStripe() {
+        selectedPaymentMethod = "stripe";
+        paymentStripeRb.setChecked(true);
+        paymentCodRb.setChecked(false);
+        
+        highlightCard(stripeCard, true);
+        highlightCard(codCard, false);
+        
+        updatePayButtonText();
+    }
+
+    private void selectCod() {
+        selectedPaymentMethod = "cod";
+        paymentStripeRb.setChecked(false);
+        paymentCodRb.setChecked(true);
+        
+        highlightCard(stripeCard, false);
+        highlightCard(codCard, true);
+        
+        updatePayButtonText();
+    }
+    
+    private void updatePayButtonText() {
+        if (payNowBtn == null) return;
+        
+        if (selectedPaymentMethod.equals("stripe")) {
+            payNowBtn.setText("Pay ₹" + String.format("%.2f", totalAmount));
+        } else {
+            payNowBtn.setText("Confirm Order");
         }
     }
     
@@ -145,84 +158,37 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void displayOrderSummary() {
         double deliveryFee = 50.0;
-        double subtotal = totalAmount > deliveryFee ? totalAmount - deliveryFee : totalAmount;
-        
-        // If the passed totalAmount doesn't account for delivery logic, we just display it.
-        // Assuming totalAmount is the final payable amount.
-        
-        subtotalAmountTv.setText("₹" + String.format("%.2f", totalAmount)); // Simplified for this demo
+        // Assuming totalAmount passed is the final amount to pay
+        subtotalAmountTv.setText("₹" + String.format("%.2f", totalAmount)); 
         totalAmountTv.setText("₹" + String.format("%.2f", totalAmount));
-        payNowBtn.setText("Pay ₹" + String.format("%.2f", totalAmount));
+        updatePayButtonText();
     }
 
     private void processPayment() {
         if (selectedPaymentMethod.equals("stripe")) {
-            fetchPaymentIntentAndPay();
+            Toast.makeText(this, "Starting Stripe Payment...", Toast.LENGTH_SHORT).show();
+            // Launch Fake Payment Screen
+            Intent intent = new Intent(this, FakePaymentActivity.class);
+            intent.putExtra("amount", totalAmount);
+            startActivityForResult(intent, FAKE_PAYMENT_REQUEST_CODE);
         } else {
             processCODPayment();
         }
     }
-
-    private void fetchPaymentIntentAndPay() {
-        payNowBtn.setEnabled(false);
-        payNowBtn.setText("Processing...");
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BACKEND_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        StripeApi stripeApi = retrofit.create(StripeApi.class);
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         
-        // Convert amount to smallest currency unit (e.g. cents/paisa)
-        int amountInSmallestUnit = (int) (totalAmount * 100);
-        
-        PaymentIntentRequest request = new PaymentIntentRequest(amountInSmallestUnit, "npr");
-
-        stripeApi.createPaymentIntent(request).enqueue(new Callback<PaymentIntentResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<PaymentIntentResponse> call, @NonNull Response<PaymentIntentResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    paymentIntentClientSecret = response.body().getClientSecret();
-                    presentPaymentSheet();
+        if (requestCode == FAKE_PAYMENT_REQUEST_CODE) {
+            if (resultCode == RESULT_OK && data != null) {
+                String status = data.getStringExtra("status");
+                if ("success".equals(status)) {
+                    createOrder("stripe");
                 } else {
-                    payNowBtn.setEnabled(true);
-                    payNowBtn.setText("Pay Now");
-                    Toast.makeText(PaymentActivity.this, "Failed to initialize payment", Toast.LENGTH_SHORT).show();
-                    Log.e(TAG, "Backend Response Error: " + response.code());
+                    Toast.makeText(this, "Payment Failed or Canceled", Toast.LENGTH_SHORT).show();
                 }
             }
-
-            @Override
-            public void onFailure(@NonNull Call<PaymentIntentResponse> call, @NonNull Throwable t) {
-                payNowBtn.setEnabled(true);
-                payNowBtn.setText("Pay Now");
-                Toast.makeText(PaymentActivity.this, "Network error: Make sure backend is running", Toast.LENGTH_LONG).show();
-                Log.e(TAG, "Network Error", t);
-            }
-        });
-    }
-
-    private void presentPaymentSheet() {
-        payNowBtn.setText("Pay Now"); // Reset
-        payNowBtn.setEnabled(true);
-        
-        if (paymentIntentClientSecret != null) {
-             PaymentSheet.Configuration configuration = new PaymentSheet.Configuration.Builder("GroceryPlus")
-                    .merchantDisplayName("GroceryPlus Inc.")
-                    .build();
-            paymentSheet.presentWithPaymentIntent(paymentIntentClientSecret, configuration);
-        }
-    }
-
-    private void onPaymentSheetResult(PaymentSheetResult paymentSheetResult) {
-        if (paymentSheetResult instanceof PaymentSheetResult.Completed) {
-            createOrder("stripe");
-        } else if (paymentSheetResult instanceof PaymentSheetResult.Canceled) {
-            Toast.makeText(this, "Payment Canceled", Toast.LENGTH_SHORT).show();
-        } else if (paymentSheetResult instanceof PaymentSheetResult.Failed) {
-            Throwable error = ((PaymentSheetResult.Failed) paymentSheetResult).getError();
-            Toast.makeText(this, "Payment Failed: " + error.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -246,7 +212,7 @@ public class PaymentActivity extends AppCompatActivity {
             long orderId = orderRepository.createOrder(userId, totalAmount, Order.STATUS_PENDING);
             
             if (orderId != -1) {
-                // Add order items (Simulated transaction logic)
+                // Add order items
                 boolean allItemsAdded = true;
                 for (CartItem item : cartItems) {
                     boolean success = orderRepository.addOrderItem(
@@ -275,6 +241,11 @@ public class PaymentActivity extends AppCompatActivity {
                     intent.putExtra("user_id", userId);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
+                    
+                    // Create Notification
+                    DatabaseHelper dbHelper = new DatabaseHelper(PaymentActivity.this);
+                    dbHelper.addNotification(userId, "Order Placed", "Your order #" + orderId + " has been placed successfully via " + paymentMethod);
+                    
                     finish();
                 } else {
                     Toast.makeText(this, "Error creating order items", Toast.LENGTH_SHORT).show();
@@ -284,13 +255,15 @@ public class PaymentActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error creating order", e);
-            Toast.makeText(this, "Error processing payment", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error processing payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
-    
     @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

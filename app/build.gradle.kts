@@ -40,6 +40,13 @@ dependencies {
     implementation(libs.mpandroidchart)
     implementation(libs.circleimageview)
     
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    
+    // OSMDroid for Maps
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    
     // Stripe Android SDK for future use
     implementation("com.stripe:stripe-android:20.37.0")
     
@@ -50,4 +57,5 @@ dependencies {
     // Retrofit for network requests
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
 }

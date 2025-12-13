@@ -99,21 +99,7 @@ public class UserHomeActivity extends AppCompatActivity {
 
         // Setup products RecyclerView (grid)
         productsRv.setLayoutManager(new GridLayoutManager(this, 2));
-        productAdapter = new ProductAdapter(this, products, new ProductAdapter.OnProductClickListener() {
-            @Override
-            public void onProductClick(Product product) {
-                // Navigate to product detail
-                Intent intent = new Intent(UserHomeActivity.this, ProductDetailActivity.class);
-                intent.putExtra("product_id", product.getProductId());
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-
-            @Override
-            public void onAddToCartClick(Product product) {
-                addToCart(product);
-            }
-        });
+        productAdapter = new ProductAdapter(this, products, userId);
         productsRv.setAdapter(productAdapter);
     }
 
@@ -177,61 +163,76 @@ public class UserHomeActivity extends AppCompatActivity {
     }
 
     private void setBottomNavigationListener() {
-        // Set click listeners for custom bottom navigation
-        navHome.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Already on home screen - reload data
-                selectedCategoryId = -1;
-                loadProducts();
-            }
-        });
-
-        navMessage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Navigate to message activity
-                Intent intent = new Intent(UserHomeActivity.this, MessageActivity.class);
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-        });
-
-        navHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Navigate to history activity
-                Intent intent = new Intent(UserHomeActivity.this, OrderHistoryActivity.class);
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-        });
-
-        navCart.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Navigate to cart activity
-                Intent intent = new Intent(UserHomeActivity.this, CartActivity.class);
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-        });
-
-        navProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Navigate to user detail view activity
-                Intent intent = new Intent(UserHomeActivity.this, UserDetailViewActivity.class);
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-        });
+        // Use common NavigationHelper
+        com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.user_home_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == R.id.action_notification) {
+            Intent intent = new Intent(this, NotificationActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    // Banner Rotation
+    private android.widget.ImageView bannerImage;
+    private android.os.Handler bannerHandler = new android.os.Handler();
+    private int[] bannerResources = {
+        R.drawable.banner_1,
+        R.drawable.banner_2, 
+        R.drawable.banner_3, 
+        R.drawable.banner_4, 
+        R.drawable.banner_5
+    };
+    private int currentBannerIndex = 0;
+    
+    // Runnable to rotate banner
+    private Runnable bannerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (bannerImage != null) {
+                try {
+                    // Update Image
+                    currentBannerIndex = (currentBannerIndex + 1) % bannerResources.length;
+                    
+                    // Standard approach: R.drawable.banner_1
+                    
+                    bannerImage.setImageResource(bannerResources[currentBannerIndex]);
+                } catch (Exception e) {
+                   Log.e(TAG, "Error setting banner image", e); 
+                }
+            }
+            // Schedule next update
+            bannerHandler.postDelayed(this, 3000); // 3 seconds
+        }
+    };
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload products when returning to this activity
+        // Reload products
         loadProducts();
+        
+        // Start Banner Rotation
+        bannerImage = findViewById(R.id.bannerImage);
+        if (bannerImage != null && bannerResources.length > 0) {
+            bannerHandler.postDelayed(bannerRunnable, 3000);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop Banner Rotation to prevent leaks
+        bannerHandler.removeCallbacks(bannerRunnable);
     }
 }

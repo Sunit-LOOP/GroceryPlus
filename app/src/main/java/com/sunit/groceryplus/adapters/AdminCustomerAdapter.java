@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sunit.groceryplus.R;
-import com.sunit.groceryplus.models.User;
+import com.sunit.groceryplus.User;
 
 import java.util.List;
 
@@ -62,9 +62,9 @@ public class AdminCustomerAdapter extends RecyclerView.Adapter<AdminCustomerAdap
         }
 
         public void bind(User user) {
-            customerNameTv.setText(user.getUserName());
-            customerEmailTv.setText(user.getUserEmail());
-            customerPhoneTv.setText(user.getUserPhone());
+            customerNameTv.setText(user.getName());
+            customerEmailTv.setText(user.getEmail());
+            customerPhoneTv.setText(user.getPhone());
             customerTypeTv.setText(user.getUserType());
         }
     }

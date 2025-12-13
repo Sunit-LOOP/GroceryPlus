@@ -7,24 +7,43 @@ import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+
 public class OrderSuccessActivity extends AppCompatActivity {
+
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable navigateRunnable = () -> {
+        navigateToHome();
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_success);
+        
+        // Start timer
+        handler.postDelayed(navigateRunnable, 3000);
+    }
 
-        // Get user_id to pass back to home
+    private void navigateToHome() {
         int userId = getIntent().getIntExtra("user_id", -1);
+        Intent intent = new Intent(OrderSuccessActivity.this, UserHomeActivity.class);
+        intent.putExtra("user_id", userId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
 
-        // Wait 3 seconds then navigate to home
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(OrderSuccessActivity.this, UserHomeActivity.class);
-            intent.putExtra("user_id", userId);
-            // Clear back stack so user can't go back to success screen
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        }, 3000);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Prevent navigation if activity is destroyed
+        handler.removeCallbacks(navigateRunnable);
+    }
+    
+    @Override
+    public void onBackPressed() {
+        // Go home immediately on back press instead of waiting or exiting
+        handler.removeCallbacks(navigateRunnable);
+        navigateToHome();
     }
 }

@@ -46,6 +46,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_CREATE_REVIEWS_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_DELIVERY_PERSONNEL_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_PAYMENTS_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_NOTIFICATIONS_TABLE);
 
         // Insert default admin user
         insertDefaultAdmin(db);
@@ -66,6 +67,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_DELETE_REVIEWS_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_DELIVERY_PERSONNEL_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_PAYMENTS_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_NOTIFICATIONS_TABLE);
 
         onCreate(db);
     }
@@ -1239,5 +1241,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                        " LEFT JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " s ON m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID +
                        " ORDER BY " + DatabaseContract.MessageEntry.COLUMN_NAME_CREATED_AT + " DESC";
         return db.rawQuery(query, null);
+    }
+
+    // ==================== NOTIFICATION METHODS ====================
+
+    public long addNotification(int userId, String title, String message) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(DatabaseContract.NotificationEntry.COLUMN_NAME_USER_ID, userId);
+            values.put(DatabaseContract.NotificationEntry.COLUMN_NAME_TITLE, title);
+            values.put(DatabaseContract.NotificationEntry.COLUMN_NAME_MESSAGE, message);
+            return db.insert(DatabaseContract.NotificationEntry.TABLE_NAME, null, values);
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding notification", e);
+            return -1;
+        } finally {
+            db.close();
+        }
+    }
+
+    public Cursor getUserNotifications(int userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM " + DatabaseContract.NotificationEntry.TABLE_NAME +
+                " WHERE " + DatabaseContract.NotificationEntry.COLUMN_NAME_USER_ID + " = ?" +
+                " ORDER BY " + DatabaseContract.NotificationEntry.COLUMN_NAME_CREATED_AT + " DESC";
+        return db.rawQuery(query, new String[]{String.valueOf(userId)});
     }
 }

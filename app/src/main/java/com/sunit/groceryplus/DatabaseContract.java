@@ -239,6 +239,29 @@ public final class DatabaseContract {
                     PaymentEntry.COLUMN_NAME_TRANSACTION_ID + " TEXT," +
                     PaymentEntry.COLUMN_NAME_PAYMENT_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY(" + PaymentEntry.COLUMN_NAME_ORDER_ID + ") REFERENCES " + OrderEntry.TABLE_NAME + "(" + OrderEntry.COLUMN_NAME_ORDER_ID + "))";
+            
+            public static class NotificationEntry implements BaseColumns {
+        public static final String TABLE_NAME = "notifications";
+        public static final String COLUMN_NAME_NOTIFICATION_ID = "notification_id";
+        public static final String COLUMN_NAME_USER_ID = "user_id";
+        public static final String COLUMN_NAME_TITLE = "title";
+        public static final String COLUMN_NAME_MESSAGE = "message";
+        public static final String COLUMN_NAME_IS_READ = "is_read";
+        public static final String COLUMN_NAME_CREATED_AT = "created_at";
+    }
+
+    public static final String SQL_CREATE_NOTIFICATIONS_TABLE =
+            "CREATE TABLE " + NotificationEntry.TABLE_NAME + " (" +
+                    NotificationEntry.COLUMN_NAME_NOTIFICATION_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    NotificationEntry.COLUMN_NAME_USER_ID + " INTEGER," +
+                    NotificationEntry.COLUMN_NAME_TITLE + " TEXT," +
+                    NotificationEntry.COLUMN_NAME_MESSAGE + " TEXT," +
+                    NotificationEntry.COLUMN_NAME_IS_READ + " INTEGER DEFAULT 0," +
+                    NotificationEntry.COLUMN_NAME_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY(" + NotificationEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + "))";
+
+    public static final String SQL_DELETE_NOTIFICATIONS_TABLE =
+            "DROP TABLE IF EXISTS " + NotificationEntry.TABLE_NAME;
 
     // SQL statements to delete tables
     public static final String SQL_DELETE_USERS_TABLE =

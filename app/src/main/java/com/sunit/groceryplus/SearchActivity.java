@@ -64,6 +64,21 @@ public class SearchActivity extends AppCompatActivity {
 
         // Setup search listener
         setupSearchListener();
+        
+        // Setup Toolbar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Search");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void initViews() {
@@ -77,21 +92,7 @@ public class SearchActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         searchResultsRv.setLayoutManager(new GridLayoutManager(this, 2));
-        productAdapter = new ProductAdapter(this, searchResults, new ProductAdapter.OnProductClickListener() {
-            @Override
-            public void onProductClick(Product product) {
-                // Navigate to product detail
-                Intent intent = new Intent(SearchActivity.this, ProductDetailActivity.class);
-                intent.putExtra("product_id", product.getProductId());
-                intent.putExtra("user_id", userId);
-                startActivity(intent);
-            }
-
-            @Override
-            public void onAddToCartClick(Product product) {
-                addToCart(product);
-            }
-        });
+        productAdapter = new ProductAdapter(this, searchResults, userId);
         searchResultsRv.setAdapter(productAdapter);
     }
 

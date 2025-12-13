@@ -85,7 +85,7 @@ public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdap
 
         public void bind(Category category) {
             categoryNameTv.setText(category.getCategoryName());
-            categoryDescriptionTv.setText(category.getDescription());
+            categoryDescriptionTv.setText(category.getCategoryDescription());
         }
     }
 }

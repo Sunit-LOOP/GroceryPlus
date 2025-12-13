@@ -1,5 +1,6 @@
 package com.sunit.groceryplus;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,8 +37,19 @@ public class OrderHistoryActivity extends AppCompatActivity {
 
         // Get user ID from intent
         userId = getIntent().getIntExtra("user_id", -1);
+        
+        if (userId == -1) {
+            // Try to get from SharedPreferences
+            android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            userId = sharedPreferences.getInt("userId", -1);
+        }
+        
         if (userId == -1) {
             Toast.makeText(this, "Error: Invalid user session", Toast.LENGTH_SHORT).show();
+            // Redirect to login
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
             finish();
             return;
         }
@@ -53,11 +65,29 @@ public class OrderHistoryActivity extends AppCompatActivity {
 
         // Load orders
         loadOrders();
+        
+        // Setup Toolbar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Order History");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void initViews() {
         ordersRecyclerView = findViewById(R.id.ordersRecyclerView);
         emptyOrdersTv = findViewById(R.id.emptyOrdersTv);
+        
+        // Setup Bottom Navigation
+        com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
     }
 
     private void setupRecyclerView() {
@@ -107,26 +137,11 @@ public class OrderHistoryActivity extends AppCompatActivity {
     }
 
     private void showOrderDetails(Order order) {
-        // Build order details message
-        StringBuilder details = new StringBuilder();
-        details.append("Order #").append(order.getOrderId()).append("\n");
-        details.append("Date: ").append(order.getOrderDate()).append("\n");
-        details.append("Status: ").append(order.getStatus().toUpperCase()).append("\n");
-        details.append("Total: Rs. ").append(String.format("%.2f", order.getTotalAmount())).append("\n\n");
-        details.append("Items:\n");
-        
-        if (order.getItems() != null && !order.getItems().isEmpty()) {
-            for (OrderItem item : order.getItems()) {
-                details.append("- ").append(item.getProductName())
-                       .append(" x").append(item.getQuantity())
-                       .append(" @ Rs.").append(String.format("%.2f", item.getPrice()))
-                       .append("\n");
-            }
-        }
-        
-        // Show in a dialog or toast
-        Toast.makeText(this, details.toString(), Toast.LENGTH_LONG).show();
-        Log.d(TAG, "Order details: " + details.toString());
+        // Launch Tracking Activity
+        Intent intent = new Intent(this, OrderTrackingActivity.class);
+        intent.putExtra("order_id", order.getOrderId());
+        intent.putExtra("order_status", order.getStatus());
+        startActivity(intent);
     }
 
     @Override

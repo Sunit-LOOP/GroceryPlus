@@ -102,6 +102,32 @@ public class UserDetailViewActivity extends AppCompatActivity {
     }
 
     private void setClickListeners() {
+        // New Action Icons
+        findViewById(R.id.actionMap).setOnClickListener(v -> {
+            OrderRepository orderRepo = new OrderRepository(this);
+            com.sunit.groceryplus.models.Order lastOrder = orderRepo.getLastOrder(userId);
+            if (lastOrder != null) {
+                Intent intent = new Intent(this, OrderTrackingActivity.class);
+                intent.putExtra("order_id", lastOrder.getOrderId());
+                intent.putExtra("order_status", lastOrder.getStatus());
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "No recent orders to track", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        findViewById(R.id.actionCart).setOnClickListener(v -> {
+            Intent intent = new Intent(this, CartActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.actionHistory).setOnClickListener(v -> {
+            Intent intent = new Intent(this, OrderHistoryActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivity(intent);
+        });
+
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

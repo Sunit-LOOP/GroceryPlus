@@ -16,7 +16,7 @@
         <ImageView
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_launcher_foreground"
+            android:src="@drawable/product_icon"
             android:background="#E0E0E0"
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="16dp" />

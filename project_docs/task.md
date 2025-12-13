@@ -52,6 +52,9 @@
 - [x] Implement error handling and user feedback
 - [x] Add animations and transitions
 - [x] Ensure responsive layouts
+- [x] Implement banner auto-rotation (3s interval)
+
+- [x] Remove text overlay from home screen banner (keep only image)
 
 **Phase 5 UI/UX: COMPLETE ✅**
 

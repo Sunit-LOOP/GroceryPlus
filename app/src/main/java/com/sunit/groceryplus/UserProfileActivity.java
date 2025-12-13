@@ -14,6 +14,12 @@ public class UserProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
 
+        // Get user ID from intent
+        int userId = getIntent().getIntExtra("user_id", -1);
+        
+        // Setup Bottom Navigation
+        com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
+
         // TODO: Implement user profile functionality
     }
 }

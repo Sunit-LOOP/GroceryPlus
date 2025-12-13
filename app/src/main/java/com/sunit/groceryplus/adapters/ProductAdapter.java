@@ -19,6 +19,7 @@ import com.sunit.groceryplus.ProductDetailActivity;
 import com.sunit.groceryplus.R;
 import com.sunit.groceryplus.models.Product;
 import com.sunit.groceryplus.DatabaseHelper;
+import com.sunit.groceryplus.FavoriteRepository;
 
 import java.util.List;
 import java.io.File;
@@ -28,12 +29,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     private Context context;
     private List<Product> productList;
     private DatabaseHelper dbHelper;
+    private FavoriteRepository favoriteRepository;
     private int userId;
 
     public ProductAdapter(Context context, List<Product> productList, int userId) {
         this.context = context;
         this.productList = productList;
         this.dbHelper = new DatabaseHelper(context);
+        this.favoriteRepository = new FavoriteRepository(context);
         this.userId = userId;
     }
 
@@ -42,10 +45,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         notifyDataSetChanged();
     }
 
+    public void updateProducts(List<Product> products) {
+        this.productList = products;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Updated to use现代 modern card layout
+        // Updated to use modern modern card layout
         View view = LayoutInflater.from(context).inflate(R.layout.row_product_card_modern, parent, false);
         return new ViewHolder(view);
     }
@@ -60,13 +68,22 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         // Ideally pass category name or fetch it, for now hardcoded or skipped if not in model
          holder.productCategory.setText("Groceries"); // Placeholder or fetch logic
 
-        if (product.getImage() != null && !product.getImage().isEmpty()) {
-            Glide.with(context)
-                    .load(new File(product.getImage()))
-                    .placeholder(R.drawable.ic_launcher_background)
-                    .into(holder.productImage);
+        // Load product image with better fallbacks
+        String imageName = product.getImage();
+        if (imageName != null && !imageName.isEmpty()) {
+            // Check if it's a drawable resource name
+            int resourceId = context.getResources().getIdentifier(imageName, "drawable", context.getPackageName());
+            if (resourceId != 0) {
+                holder.productImage.setImageResource(resourceId);
+            } else {
+                // Try to assign specific images based on product name
+                int specificImage = getSpecificImageForProduct(product.getProductName());
+                holder.productImage.setImageResource(specificImage);
+            }
         } else {
-             holder.productImage.setImageResource(R.drawable.ic_launcher_background);
+            // Assign specific images based on product name
+            int specificImage = getSpecificImageForProduct(product.getProductName());
+            holder.productImage.setImageResource(specificImage);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -83,21 +100,76 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         });
         
         // Favorite Logic
-        boolean isFav = dbHelper.isFavorite(userId, product.getProductId());
+        boolean isFav = favoriteRepository.isInFavorites(userId, product.getProductId());
         holder.favoriteBtn.setChecked(isFav);
         
         holder.favoriteBtn.setOnClickListener(v -> {
             if (holder.favoriteBtn.isChecked()) {
-                dbHelper.addFavorite(userId, product.getProductId());
+                favoriteRepository.addToFavorites(userId, product.getProductId());
                 Toast.makeText(context, "Added to favorites", Toast.LENGTH_SHORT).show();
             } else {
-                dbHelper.removeFavorite(userId, product.getProductId());
+                favoriteRepository.removeFromFavorites(userId, product.getProductId());
                 Toast.makeText(context, "Removed from favorites", Toast.LENGTH_SHORT).show();
             }
         });
 
         // Animation
         holder.itemView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in));
+    }
+
+    /**
+     * Get specific image resource based on product name
+     */
+    private int getSpecificImageForProduct(String productName) {
+        if (productName == null) {
+            return R.drawable.product_icon;
+        }
+        
+        String lowerName = productName.toLowerCase();
+        
+        // Detailed mapping based on available drawables
+        if (lowerName.contains("milk")) {
+            if (lowerName.contains("skim")) return R.drawable.skim_milk;
+            return R.drawable.bottle_milk;
+        } else if (lowerName.contains("cheese")) {
+            return R.drawable.cheese_slice;
+        } else if (lowerName.contains("curd") || lowerName.contains("yogurt") || lowerName.contains("dahi")) {
+            return R.drawable.dahi;
+        } else if (lowerName.contains("tomato")) {
+            return R.drawable.tomato_red;
+        } else if (lowerName.contains("cabbage")) {
+            return R.drawable.cabbage;
+        } else if (lowerName.contains("cauliflower")) {
+            return R.drawable.cauliflower;
+        } else if (lowerName.contains("lettuce")) {
+            return R.drawable.lettuce_leaf;
+        } else if (lowerName.contains("paneer")) {
+            return R.drawable.paneer_cubes;
+        } else if (lowerName.contains("bottle") && lowerName.contains("gourd")) {
+            return R.drawable.bottle_gourd;
+        } else if (lowerName.contains("okra") || lowerName.contains("lady") || lowerName.contains("vindi")) {
+            return R.drawable.vindi;
+        } else if (lowerName.contains("green") && (lowerName.contains("vegetable") || lowerName.contains("leaf"))) {
+            if (lowerName.contains("small")) return R.drawable.small_green_leaf_vegetable;
+            return R.drawable.green_vegetable;
+        } 
+        // New Mappings
+        else if (lowerName.contains("apple")) {
+            return R.drawable.apple;
+        } else if (lowerName.contains("banana")) {
+            return R.drawable.banana;
+        } else if (lowerName.contains("bread") || lowerName.contains("bakery")) {
+            return R.drawable.bread;
+        } else if (lowerName.contains("rice") || lowerName.contains("staple")) {
+            return R.drawable.rice_sack;
+        } else if (lowerName.contains("oil")) {
+            return R.drawable.oil_bottle;
+        } else if (lowerName.contains("juice") || lowerName.contains("drink") || lowerName.contains("beverage")) {
+            return R.drawable.juice_bottle;
+        }
+        else {
+            return R.drawable.product_icon;
+        }
     }
 
     @Override
@@ -108,7 +180,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView productImage;
         TextView productName, productPrice, productCategory;
-        View addToCartBtn; // Changed to View to match MaterialButton generic usage or specific type
+        View addToCartBtn;
         ToggleButton favoriteBtn;
 
         public ViewHolder(@NonNull View itemView) {
@@ -118,48 +190,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
             productPrice = itemView.findViewById(R.id.productPrice);
             productCategory = itemView.findViewById(R.id.productCategory);
             addToCartBtn = itemView.findViewById(R.id.addToCartBtn);
-            });
-
-            if (addToCartBtn != null) {
-                addToCartBtn.setOnClickListener(v -> {
-                    int position = getAdapterPosition();
-                    if (position != RecyclerView.NO_POSITION && listener != null) {
-                        listener.onAddToCartClick(products.get(position));
-                    }
-                });
-            }
-        }
-
-        public void bind(Product product) {
-            productNameTv.setText(product.getProductName());
-            productPriceTv.setText("Rs. " + String.format("%.2f", product.getPrice()));
-            
-            if (productDescriptionTv != null) {
-                productDescriptionTv.setText(product.getDescription());
-            }
-
-            // Set product image based on image name
-            // For now, using a default icon
-            if (productImageIv != null) {
-                int imageResource = getImageResource(product.getImage());
-                if (imageResource != 0) {
-                    productImageIv.setImageResource(imageResource);
-                } else {
-                    productImageIv.setImageResource(R.drawable.ic_launcher_foreground);
-                }
-            }
-        }
-
-        private int getImageResource(String imageName) {
-            if (imageName == null || imageName.isEmpty()) {
-                return 0;
-            }
-            
-            try {
-                return context.getResources().getIdentifier(imageName, "drawable", context.getPackageName());
-            } catch (Exception e) {
-                return 0;
-            }
+            favoriteBtn = itemView.findViewById(R.id.favoriteBtn);
         }
     }
 }
