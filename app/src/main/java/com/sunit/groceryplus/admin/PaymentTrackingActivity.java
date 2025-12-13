@@ -24,6 +24,9 @@ public class PaymentTrackingActivity extends AppCompatActivity {
     private AdminPaymentAdapter adapter;
     private DatabaseHelper dbHelper;
 
+    private com.google.android.material.card.MaterialCardView cardAll, cardStripe, cardCod;
+    private String currentFilter = "all"; // all, cod, stripe
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,12 +36,19 @@ public class PaymentTrackingActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         dbHelper = new DatabaseHelper(this);
         paymentsRv = findViewById(R.id.paymentsRv);
+        
+        // Initialize filter cards
+        cardAll = findViewById(R.id.cardAll);
+        cardStripe = findViewById(R.id.cardStripe);
+        cardCod = findViewById(R.id.cardCod);
 
         setupRecyclerView();
-        loadPayments();
+        setupFilterChips();
+        loadPayments(currentFilter);
     }
 
     private void setupRecyclerView() {
@@ -47,7 +57,37 @@ public class PaymentTrackingActivity extends AppCompatActivity {
         paymentsRv.setAdapter(adapter);
     }
 
-    private void loadPayments() {
+    private void setupFilterChips() {
+        cardAll.setOnClickListener(v -> selectFilter("all"));
+        cardStripe.setOnClickListener(v -> selectFilter("stripe"));
+        cardCod.setOnClickListener(v -> selectFilter("cod"));
+        
+        // Initial selection
+        selectFilter("all");
+    }
+
+    private void selectFilter(String filter) {
+        currentFilter = filter;
+        
+        // Update Card Highlighting
+        highlightCard(cardAll, "all".equals(filter));
+        highlightCard(cardStripe, "stripe".equals(filter));
+        highlightCard(cardCod, "cod".equals(filter));
+        
+        loadPayments(currentFilter);
+    }
+
+    private void highlightCard(com.google.android.material.card.MaterialCardView card, boolean isSelected) {
+        if (isSelected) {
+            card.setStrokeColor(getResources().getColor(android.R.color.holo_green_dark));
+            card.setStrokeWidth(4);
+        } else {
+            card.setStrokeColor(0xFFE0E0E0); // Light Gray #E0E0E0
+            card.setStrokeWidth(2);
+        }
+    }
+    
+    private void loadPayments(String filter) {
         List<Payment> payments = new ArrayList<>();
         Cursor cursor = dbHelper.getAllPayments();
         
@@ -60,7 +100,10 @@ public class PaymentTrackingActivity extends AppCompatActivity {
                 String txnId = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_TRANSACTION_ID));
                 String date = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_DATE));
                 
-                payments.add(new Payment(id, orderId, amount, method, txnId, date));
+                // Apply filter
+                if (filter.equals("all") || method.equalsIgnoreCase(filter)) {
+                    payments.add(new Payment(id, orderId, amount, method, txnId, date));
+                }
             } while (cursor.moveToNext());
             cursor.close();
         }

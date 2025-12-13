@@ -50,6 +50,7 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_TOTAL_AMOUNT = "total_amount";
         public static final String COLUMN_NAME_STATUS = "status";
         public static final String COLUMN_NAME_ORDER_DATE = "order_date";
+        public static final String COLUMN_NAME_DELIVERY_PERSON_ID = "delivery_person_id";
     }
 
     /* Inner class that defines the order_items table contents */
@@ -163,7 +164,9 @@ public final class DatabaseContract {
                     OrderEntry.COLUMN_NAME_TOTAL_AMOUNT + " REAL," +
                     OrderEntry.COLUMN_NAME_STATUS + " TEXT," +
                     OrderEntry.COLUMN_NAME_ORDER_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
-                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + "))";
+                    OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + " INTEGER," +
+                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
+                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + ") REFERENCES " + DeliveryPersonEntry.TABLE_NAME + "(" + DeliveryPersonEntry.COLUMN_NAME_PERSON_ID + "))";
 
     public static final String SQL_CREATE_ORDER_ITEMS_TABLE =
             "CREATE TABLE " + OrderItemEntry.TABLE_NAME + " (" +

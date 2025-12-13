@@ -67,10 +67,15 @@ public class OrderHistoryActivity extends AppCompatActivity {
         loadOrders();
         
         // Setup Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.orderHistoryToolbar);
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Order History");
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        
+        // Handle explicit navigation click (optional, but good for custom behaviors)
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
     }
 
     @Override

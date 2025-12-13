@@ -39,6 +39,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         categoriesRv = findViewById(R.id.categoriesRv);
         addCategoryFab = findViewById(R.id.addCategoryFab);

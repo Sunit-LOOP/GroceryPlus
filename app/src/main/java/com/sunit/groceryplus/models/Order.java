@@ -16,6 +16,8 @@ public class Order {
     private String status;
     private String orderDate;
     private List<OrderItem> items;
+    private boolean paymentReceived;
+    private String paymentMethod;
 
     // Order status constants
     public static final String STATUS_PENDING = "pending";
@@ -126,6 +128,42 @@ public class Order {
 
     public void addItem(OrderItem item) {
         this.items.add(item);
+    }
+
+    public boolean isPaymentReceived() {
+        return paymentReceived;
+    }
+
+    public void setPaymentReceived(boolean paymentReceived) {
+        this.paymentReceived = paymentReceived;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    // Delivery Person
+    private int deliveryPersonId;
+    private String deliveryPersonName;
+
+    public int getDeliveryPersonId() {
+        return deliveryPersonId;
+    }
+
+    public void setDeliveryPersonId(int deliveryPersonId) {
+        this.deliveryPersonId = deliveryPersonId;
+    }
+
+    public String getDeliveryPersonName() {
+        return deliveryPersonName;
+    }
+
+    public void setDeliveryPersonName(String deliveryPersonName) {
+        this.deliveryPersonName = deliveryPersonName;
     }
 
     // Helper methods

@@ -25,11 +25,56 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Search Bar Button -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btnSearchField"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="25dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="#CCCCCC"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Search for products..."
+                        android:textSize="14sp"
+                        android:textColor="#757575"
+                        android:fontFamily="sans-serif-medium"/>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="12dp"
+                        android:src="@drawable/search_icon"
+                        app:tint="#4CAF50" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Discount Banner -->
-            <FrameLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
 
                 <ImageView
                     android:id="@+id/bannerImage"
@@ -38,8 +83,7 @@
                     android:src="@drawable/discount_banner_bg"
                     android:scaleType="centerCrop" />
 
-
-            </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:id="@+id/categoriesTitle"
@@ -47,17 +91,19 @@
                 android:layout_height="wrap_content"
                 android:text="Categories"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333333"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#212121"
                 android:paddingStart="16dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="8dp" />
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/categoriesRv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="8dp"
                 android:clipToPadding="false" />
 
             <TextView

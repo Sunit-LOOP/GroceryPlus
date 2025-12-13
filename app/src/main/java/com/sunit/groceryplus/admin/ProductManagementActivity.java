@@ -41,11 +41,14 @@ public class ProductManagementActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_management);
         
-        // Enable back button
+        // Setup Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Manage Products");
         }
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
         
         initViews();
         initRepositories();

@@ -19,18 +19,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- Back Button -->
-            <ImageButton
-                android:id="@+id/backButton"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_arrow_back"
-                android:scaleType="centerInside"
-                android:contentDescription="Back" />
-
             <!-- User Detail Title -->
             <TextView
                 android:layout_width="wrap_content"
@@ -41,113 +29,40 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <!-- Track Order Icon -->
+            <!-- Back Button (Placed last for Z-index) -->
             <ImageButton
-                android:id="@+id/trackOrderButton"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentEnd="true"
+                android:id="@+id/backButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:layout_marginEnd="16dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/map_icon"
-                android:scaleType="fitCenter"
-                android:contentDescription="Track Last Order" />
+                android:src="@drawable/ic_arrow_back"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Back" />
 
         </RelativeLayout>
-
     </androidx.appcompat.widget.Toolbar>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <!-- User Profile Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
-
-                    <!-- User Profile Image -->
-                    <ImageView
-                        android:id="@+id/userProfileImage"
-                        android:layout_width="80dp"
-                        android:layout_height="80dp"
-                        android:src="@drawable/user_profile"
-                        android:scaleType="centerCrop"
-                        android:background="@drawable/circle_background" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-
-                        <TextView
-                            android:id="@+id/userNameText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="User Name"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            android:textColor="#333333"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:id="@+id/userEmailText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="user@example.com"
-                            android:textSize="14sp"
-                            android:textColor="#666666"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:id="@+id/userPhoneText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="+1234567890"
-                            android:textSize="14sp"
-                            android:textColor="#666666" />
-
-                    </LinearLayout>
-
-                    <!-- Settings Icon -->
-                    <ImageView
-                        android:id="@+id/settingsIcon"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/settings_icon"
-                        android:layout_marginStart="16dp" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Quick Actions Section -->
+            <!-- Action Buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="16dp"
-                android:weightSum="3">
+                android:weightSum="4">
 
                 <!-- Map / Track Order -->
                 <LinearLayout
@@ -199,6 +114,31 @@
                         android:textColor="#333333"/>
                 </LinearLayout>
 
+                <!-- Notifications -->
+                <LinearLayout
+                    android:id="@+id/actionNotification"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/notification_bell_icon"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Notifications"
+                        android:textSize="12sp"
+                        android:textColor="#333333"/>
+                </LinearLayout>
+
                 <!-- Order History -->
                 <LinearLayout
                     android:id="@+id/actionHistory"
@@ -240,14 +180,32 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="User Information"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333"
-                        android:layout_marginBottom="16dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="User Information"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="#333333" />
+
+                        <ImageView
+                            android:id="@+id/settingsIcon"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/settings_icon"
+                            android:contentDescription="Settings"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"/>
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"

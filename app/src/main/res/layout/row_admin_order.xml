@@ -69,6 +69,50 @@
                 android:textColor="#FF9800" />
                 
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:text="Payment: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/paymentStatusTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Not Received"
+                android:textColor="#F44336"
+                android:textStyle="bold" />
+                
+        </LinearLayout>
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <TextView
+                android:text="Delivery Person: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            
+            <TextView
+                android:id="@+id/deliveryPersonTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unassigned"
+                android:textStyle="bold"
+                android:textColor="#666666" />
+                
+        </LinearLayout>
         
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,6 +120,15 @@
             android:layout_marginTop="12dp"
             android:orientation="horizontal"
             android:gravity="end">
+            
+            <Button
+                android:id="@+id/assignDeliveryBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Assign Delivery"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton" />
             
             <Button
                 android:id="@+id/updateStatusBtn"

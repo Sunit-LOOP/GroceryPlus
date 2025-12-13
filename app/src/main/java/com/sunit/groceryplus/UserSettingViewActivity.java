@@ -23,9 +23,12 @@ public class UserSettingViewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_setting_view);
-
+        
         // Initialize views
         initViews();
+        
+        // Load preferences
+        loadPreferences();
 
         // Set click listeners
         setClickListeners();
@@ -42,9 +45,21 @@ public class UserSettingViewActivity extends AppCompatActivity {
         logoutCard = findViewById(R.id.logoutCard);
     }
 
+    private void loadPreferences() {
+        android.content.SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        boolean notificationsEnabled = prefs.getBoolean("notifications_enabled", true);
+        boolean darkModeEnabled = prefs.getBoolean("dark_mode_enabled", false);
+        
+        notificationSwitch.setChecked(notificationsEnabled);
+        darkModeSwitch.setChecked(darkModeEnabled);
+    }
+
     private void setClickListeners() {
 
         notificationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            android.content.SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            prefs.edit().putBoolean("notifications_enabled", isChecked).apply();
+            
             if (isChecked) {
                 Toast.makeText(UserSettingViewActivity.this, "Notifications enabled", Toast.LENGTH_SHORT).show();
             } else {
@@ -53,6 +68,9 @@ public class UserSettingViewActivity extends AppCompatActivity {
         });
 
         darkModeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            android.content.SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            prefs.edit().putBoolean("dark_mode_enabled", isChecked).apply();
+            
             if (isChecked) {
                 Toast.makeText(UserSettingViewActivity.this, "Dark mode enabled", Toast.LENGTH_SHORT).show();
             } else {

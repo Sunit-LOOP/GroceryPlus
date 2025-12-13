@@ -19,17 +19,13 @@ public class UserDetailViewActivity extends AppCompatActivity {
     private UserRepository userRepository;
     private int userId;
 
-    // UI Elements
     private ImageButton backButton;
-    private TextView userNameText;
-    private TextView userEmailText;
-    private TextView userPhoneText;
+    private ImageView settingsIcon;
     private TextView fullNameValue;
     private TextView emailValue;
     private TextView phoneValue;
     private TextView userTypeValue;
-    private ImageView settingsIcon;
-    private ImageView userProfileImage;
+
     private MaterialButton editProfileButton;
     private MaterialButton changePasswordButton;
     private MaterialButton logoutButton;
@@ -63,18 +59,20 @@ public class UserDetailViewActivity extends AppCompatActivity {
 
     private void initViews() {
         backButton = findViewById(R.id.backButton);
-        userNameText = findViewById(R.id.userNameText);
-        userEmailText = findViewById(R.id.userEmailText);
-        userPhoneText = findViewById(R.id.userPhoneText);
+        settingsIcon = findViewById(R.id.settingsIcon);
         fullNameValue = findViewById(R.id.fullNameValue);
         emailValue = findViewById(R.id.emailValue);
         phoneValue = findViewById(R.id.phoneValue);
         userTypeValue = findViewById(R.id.userTypeValue);
-        settingsIcon = findViewById(R.id.settingsIcon);
-        userProfileImage = findViewById(R.id.userProfileImage);
         editProfileButton = findViewById(R.id.editProfileButton);
         changePasswordButton = findViewById(R.id.changePasswordButton);
         logoutButton = findViewById(R.id.logoutButton);
+        
+        // Setup Notification Click
+        findViewById(R.id.actionNotification).setOnClickListener(v -> {
+            Intent intent = new Intent(this, NotificationActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void loadUserData() {
@@ -82,9 +80,6 @@ public class UserDetailViewActivity extends AppCompatActivity {
             User user = userRepository.getUserById(userId);
             if (user != null) {
                 // Update UI with user data
-                userNameText.setText(user.getName());
-                userEmailText.setText(user.getEmail());
-                userPhoneText.setText(user.getPhone());
                 fullNameValue.setText(user.getName());
                 emailValue.setText(user.getEmail());
                 phoneValue.setText(user.getPhone());
@@ -144,6 +139,8 @@ public class UserDetailViewActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+
 
         editProfileButton.setOnClickListener(new View.OnClickListener() {
             @Override

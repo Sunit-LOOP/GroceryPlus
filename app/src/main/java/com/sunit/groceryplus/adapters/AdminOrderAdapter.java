@@ -24,6 +24,7 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
 
     public interface OnOrderActionListener {
         void onUpdateStatusClick(Order order);
+        void onAssignDeliveryClick(Order order);
     }
 
     public AdminOrderAdapter(Context context, List<Order> orders, OnOrderActionListener listener) {
@@ -60,7 +61,10 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
         TextView orderDateTv;
         TextView orderAmountTv;
         TextView orderStatusTv;
+        TextView paymentStatusTv;
+        TextView deliveryPersonTv;
         Button updateStatusBtn;
+        Button assignDeliveryBtn;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -68,12 +72,22 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
             orderDateTv = itemView.findViewById(R.id.orderDateTv);
             orderAmountTv = itemView.findViewById(R.id.orderAmountTv);
             orderStatusTv = itemView.findViewById(R.id.orderStatusTv);
+            paymentStatusTv = itemView.findViewById(R.id.paymentStatusTv);
+            deliveryPersonTv = itemView.findViewById(R.id.deliveryPersonTv);
             updateStatusBtn = itemView.findViewById(R.id.updateStatusBtn);
+            assignDeliveryBtn = itemView.findViewById(R.id.assignDeliveryBtn);
 
             updateStatusBtn.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
                     listener.onUpdateStatusClick(orders.get(position));
+                }
+            });
+
+            assignDeliveryBtn.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onAssignDeliveryClick(orders.get(position));
                 }
             });
         }
@@ -84,7 +98,7 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
             orderAmountTv.setText("Rs. " + String.format("%.2f", order.getTotalAmount()));
             orderStatusTv.setText(order.getStatus());
 
-            // Color code status
+            // ... (Color code status logic remains same)
             String status = order.getStatus();
             if ("Pending".equalsIgnoreCase(status)) {
                 orderStatusTv.setTextColor(Color.parseColor("#FF9800")); // Orange
@@ -96,6 +110,26 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
                 orderStatusTv.setTextColor(Color.parseColor("#F44336")); // Red
             } else {
                 orderStatusTv.setTextColor(Color.DKGRAY);
+            }
+
+            // ... (Payment status logic remains same)
+            String paymentMethod = order.getPaymentMethod();
+            if (paymentMethod != null && !paymentMethod.isEmpty()) {
+                paymentStatusTv.setText(String.format("Received (%s)", paymentMethod));
+                paymentStatusTv.setTextColor(Color.parseColor("#4CAF50")); // Green
+            } else if (order.isPaymentReceived()) {
+                paymentStatusTv.setText("Received");
+                paymentStatusTv.setTextColor(Color.parseColor("#4CAF50")); // Green
+            } else {
+                paymentStatusTv.setText("Not Received");
+                paymentStatusTv.setTextColor(Color.parseColor("#F44336")); // Red
+            }
+            
+            // Delivery Person
+            if (order.getDeliveryPersonName() != null) {
+                deliveryPersonTv.setText(order.getDeliveryPersonName());
+            } else {
+                deliveryPersonTv.setText("Unassigned");
             }
         }
     }

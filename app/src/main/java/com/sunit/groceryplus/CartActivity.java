@@ -66,10 +66,14 @@ public class CartActivity extends AppCompatActivity {
         loadCartItems();
         
         // Setup Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.cartToolbar);
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("My Cart");
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
     }
 
     @Override

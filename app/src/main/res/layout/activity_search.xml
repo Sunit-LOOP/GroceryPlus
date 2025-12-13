@@ -32,9 +32,8 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_search"
+                android:src="@drawable/search_icon"
                 android:layout_gravity="center_vertical"
-                app:tint="#757575"
                 android:contentDescription="Search Icon" />
 
             <EditText

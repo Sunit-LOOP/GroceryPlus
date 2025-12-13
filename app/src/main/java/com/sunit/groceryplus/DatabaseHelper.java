@@ -25,7 +25,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Info
     private static final String DATABASE_NAME = "GroceryPlus.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -890,9 +890,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String query = "SELECT o.*, u." + UserEntry.COLUMN_NAME_USER_NAME + ", u." + UserEntry.COLUMN_NAME_USER_EMAIL + ", u." + UserEntry.COLUMN_NAME_USER_PHONE +
+                      ", p." + DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_ID + ", p." + DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_METHOD +
+                      ", dp." + DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_NAME + " as delivery_person_name" +
                       " FROM " + OrderEntry.TABLE_NAME + " o " +
                       " JOIN " + UserEntry.TABLE_NAME + " u " +
                       " ON o." + OrderEntry.COLUMN_NAME_USER_ID + " = u." + UserEntry.COLUMN_NAME_USER_ID +
+                      " LEFT JOIN " + DatabaseContract.PaymentEntry.TABLE_NAME + " p " +
+                      " ON o." + OrderEntry.COLUMN_NAME_ORDER_ID + " = p." + DatabaseContract.PaymentEntry.COLUMN_NAME_ORDER_ID +
+                      " LEFT JOIN " + DatabaseContract.DeliveryPersonEntry.TABLE_NAME + " dp " +
+                      " ON o." + OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + " = dp." + DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_PERSON_ID +
                       " ORDER BY o." + OrderEntry.COLUMN_NAME_ORDER_DATE + " DESC";
         
         Cursor cursor = db.rawQuery(query, null);
@@ -909,9 +915,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
                     String orderDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
                     
+                    int deliveryPersonIdIndex = cursor.getColumnIndex(OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID);
+                    int deliveryPersonId = (deliveryPersonIdIndex != -1) ? cursor.getInt(deliveryPersonIdIndex) : 0;
+                    
+                    String deliveryPersonName = null;
+                    int dpNameIndex = cursor.getColumnIndex("delivery_person_name");
+                    if (dpNameIndex != -1) {
+                         deliveryPersonName = cursor.getString(dpNameIndex);
+                    }
+
+                    // Check if payment exists (LEFT JOIN will return null if no payment)
+                    int paymentIdIndex = cursor.getColumnIndex(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_ID);
+                    boolean paymentReceived = false;
+                    String paymentMethod = null;
+                    if (paymentIdIndex >= 0 && !cursor.isNull(paymentIdIndex)) {
+                        paymentReceived = true;
+                        int paymentMethodIndex = cursor.getColumnIndex(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_METHOD);
+                        if (paymentMethodIndex >= 0) {
+                            paymentMethod = cursor.getString(paymentMethodIndex);
+                        }
+                    }
+                    
                     com.sunit.groceryplus.models.Order order = new com.sunit.groceryplus.models.Order(
                         orderId, userId, userName, userEmail, userPhone, totalAmount, status, orderDate
                     );
+                    order.setPaymentReceived(paymentReceived);
+                    order.setPaymentMethod(paymentMethod);
+                    order.setDeliveryPersonId(deliveryPersonId);
+                    order.setDeliveryPersonName(deliveryPersonName);
+                    
                     orders.add(order);
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing order", e);
@@ -931,9 +963,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String query = "SELECT o.*, u." + UserEntry.COLUMN_NAME_USER_NAME + ", u." + UserEntry.COLUMN_NAME_USER_EMAIL + ", u." + UserEntry.COLUMN_NAME_USER_PHONE +
+                      ", dp." + DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_NAME + " as delivery_person_name" +
                       " FROM " + OrderEntry.TABLE_NAME + " o " +
                       " JOIN " + UserEntry.TABLE_NAME + " u " +
                       " ON o." + OrderEntry.COLUMN_NAME_USER_ID + " = u." + UserEntry.COLUMN_NAME_USER_ID +
+                      " LEFT JOIN " + DatabaseContract.DeliveryPersonEntry.TABLE_NAME + " dp " +
+                      " ON o." + OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + " = dp." + DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_PERSON_ID +
                       " WHERE o." + OrderEntry.COLUMN_NAME_USER_ID + " = ?" +
                       " ORDER BY o." + OrderEntry.COLUMN_NAME_ORDER_DATE + " DESC";
         
@@ -949,10 +984,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     double totalAmount = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT));
                     String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
                     String orderDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
+
+                    int deliveryPersonIdIndex = cursor.getColumnIndex(OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID);
+                    int deliveryPersonId = (deliveryPersonIdIndex != -1) ? cursor.getInt(deliveryPersonIdIndex) : 0;
+                    
+                    String deliveryPersonName = null;
+                    int dpNameIndex = cursor.getColumnIndex("delivery_person_name");
+                    if (dpNameIndex != -1) {
+                         deliveryPersonName = cursor.getString(dpNameIndex);
+                    }
                     
                     com.sunit.groceryplus.models.Order order = new com.sunit.groceryplus.models.Order(
                         orderId, userId, userName, userEmail, userPhone, totalAmount, status, orderDate
                     );
+                    order.setDeliveryPersonId(deliveryPersonId);
+                    order.setDeliveryPersonName(deliveryPersonName);
+                    
                     orders.add(order);
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing order", e);
@@ -1024,6 +1071,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.close();
         }
     }
+
+    public boolean assignDeliveryPerson(int orderId, int deliveryPersonId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID, deliveryPersonId);
+        
+        int rows = db.update(OrderEntry.TABLE_NAME, values, OrderEntry.COLUMN_NAME_ORDER_ID + " = ?", new String[]{String.valueOf(orderId)});
+        return rows > 0;
+    }
+
     
     // ==================== SAMPLE DATA METHODS ====================
     
@@ -1233,14 +1290,51 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // ==================== MESSAGING METHODS ====================
     
+    // ==================== MESSAGING METHODS ====================
+    
     public Cursor getAllMessages() {
         SQLiteDatabase db = this.getReadableDatabase();
-        // Simplified: just get all messages for now, typically would filter by user interactions
         String query = "SELECT m.*, s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME + " as sender_name" +
                        " FROM " + DatabaseContract.MessageEntry.TABLE_NAME + " m " +
                        " LEFT JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " s ON m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID +
                        " ORDER BY " + DatabaseContract.MessageEntry.COLUMN_NAME_CREATED_AT + " DESC";
         return db.rawQuery(query, null);
+    }
+
+    public long sendMessage(int senderId, int receiverId, String message) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID, senderId);
+        values.put(DatabaseContract.MessageEntry.COLUMN_NAME_RECEIVER_ID, receiverId);
+        values.put(DatabaseContract.MessageEntry.COLUMN_NAME_MESSAGE_TEXT, message);
+        return db.insert(DatabaseContract.MessageEntry.TABLE_NAME, null, values);
+    }
+
+    public Cursor getConversation(int userId1, int userId2) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        // Get messages between two users (sent by either)
+        String query = "SELECT m.*, s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME + " as sender_name" +
+                       " FROM " + DatabaseContract.MessageEntry.TABLE_NAME + " m " +
+                       " LEFT JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " s ON m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = s." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID +
+                       " WHERE (m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = ? AND m." + DatabaseContract.MessageEntry.COLUMN_NAME_RECEIVER_ID + " = ?) OR " +
+                       "(m." + DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID + " = ? AND m." + DatabaseContract.MessageEntry.COLUMN_NAME_RECEIVER_ID + " = ?) " +
+                       " ORDER BY " + DatabaseContract.MessageEntry.COLUMN_NAME_CREATED_AT + " ASC"; // Oldest first for chat
+        
+        return db.rawQuery(query, new String[]{String.valueOf(userId1), String.valueOf(userId2), String.valueOf(userId2), String.valueOf(userId1)});
+    }
+
+    public int getAdminId() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT " + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID + 
+                      " FROM " + DatabaseContract.UserEntry.TABLE_NAME + 
+                      " WHERE " + DatabaseContract.UserEntry.COLUMN_NAME_USER_TYPE + " = 'admin' LIMIT 1";
+        Cursor cursor = db.rawQuery(query, null);
+        int adminId = -1;
+        if (cursor != null && cursor.moveToFirst()) {
+            adminId = cursor.getInt(0);
+        }
+        if (cursor != null) cursor.close();
+        return adminId;
     }
 
     // ==================== NOTIFICATION METHODS ====================

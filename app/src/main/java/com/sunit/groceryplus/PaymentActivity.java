@@ -242,9 +242,7 @@ public class PaymentActivity extends AppCompatActivity {
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                     
-                    // Create Notification
-                    DatabaseHelper dbHelper = new DatabaseHelper(PaymentActivity.this);
-                    dbHelper.addNotification(userId, "Order Placed", "Your order #" + orderId + " has been placed successfully via " + paymentMethod);
+                    // Notification handled by OrderRepository
                     
                     finish();
                 } else {

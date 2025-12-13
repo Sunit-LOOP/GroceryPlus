@@ -34,6 +34,7 @@ public class OrderManagementActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         ordersRv = findViewById(R.id.ordersRv);
         orderRepository = new OrderRepository(this);
@@ -48,6 +49,11 @@ public class OrderManagementActivity extends AppCompatActivity {
             @Override
             public void onUpdateStatusClick(Order order) {
                 showUpdateStatusDialog(order);
+            }
+
+            @Override
+            public void onAssignDeliveryClick(Order order) {
+                showAssignDeliveryDialog(order);
             }
         });
         ordersRv.setAdapter(adapter);
@@ -66,12 +72,56 @@ public class OrderManagementActivity extends AppCompatActivity {
             .setSingleChoiceItems(statuses, -1, (dialog, which) -> {
                 String newStatus = statuses[which];
                 // Update in DB
-                boolean success = orderRepository.updateOrderStatus(order.getOrderId(), newStatus);
+                boolean success = orderRepository.updateOrderStatus(order.getOrderId(), order.getUserId(), newStatus);
                 if (success) {
                     Toast.makeText(this, "Order updated to " + newStatus, Toast.LENGTH_SHORT).show();
                     loadOrders();
                 } else {
                     Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show();
+                }
+                dialog.dismiss();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showAssignDeliveryDialog(Order order) {
+        // Load delivery personnel
+        com.sunit.groceryplus.DeliveryPersonRepository dpRepo = new com.sunit.groceryplus.DeliveryPersonRepository(this);
+        List<com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson> personnel = dpRepo.getAllDeliveryPersonnel();
+
+        if (personnel.isEmpty()) {
+            // Seed sample data for testing if empty
+            dpRepo.addDeliveryPerson("John Doe", "9876543210");
+            dpRepo.addDeliveryPerson("Jane Smith", "9800000000");
+            personnel = dpRepo.getAllDeliveryPersonnel();
+        }
+
+        String[] names = new String[personnel.size()];
+        for (int i = 0; i < personnel.size(); i++) {
+            names[i] = personnel.get(i).getName();
+        }
+
+        final List<com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson> finalPersonnel = personnel;
+
+        new AlertDialog.Builder(this)
+            .setTitle("Assign Delivery Person")
+            .setSingleChoiceItems(names, -1, (dialog, which) -> {
+                com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson selectedPerson = finalPersonnel.get(which);
+                
+                boolean success = orderRepository.assignDeliveryPerson(order.getOrderId(), selectedPerson.getId());
+                if (success) {
+                    Toast.makeText(this, "Assigned to " + selectedPerson.getName(), Toast.LENGTH_SHORT).show();
+                    // Send notification to user
+                    com.sunit.groceryplus.DatabaseHelper dbHelper = new com.sunit.groceryplus.DatabaseHelper(this);
+                    String title = "Delivery Update";
+                    String message = "Your order #" + order.getOrderId() + " has been assigned to " + selectedPerson.getName();
+                    dbHelper.addNotification(order.getUserId(), title, message);
+                    com.sunit.groceryplus.utils.NotificationUtils.showNotification(this, title, message);
+                    
+                    loadOrders();
+                } else {
+                    Toast.makeText(this, "Failed to assign", Toast.LENGTH_SHORT).show();
                 }
                 dialog.dismiss();
             })

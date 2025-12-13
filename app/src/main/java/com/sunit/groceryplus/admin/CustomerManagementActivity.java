@@ -31,6 +31,7 @@ public class CustomerManagementActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         customersRv = findViewById(R.id.customersRv);
         userRepository = new UserRepository(this);

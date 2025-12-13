@@ -12,8 +12,10 @@ import java.util.List;
 public class OrderRepository {
     private static final String TAG = "OrderRepository";
     private DatabaseHelper dbHelper;
+    private Context context;
 
     public OrderRepository(Context context) {
+        this.context = context;
         this.dbHelper = new DatabaseHelper(context);
     }
 
@@ -22,7 +24,14 @@ public class OrderRepository {
      */
     public long createOrder(int userId, double totalAmount, String status) {
         try {
-            return dbHelper.createOrder(userId, totalAmount, status);
+            long orderId = dbHelper.createOrder(userId, totalAmount, status);
+            if (orderId != -1) {
+                String title = "Order Placed";
+                String message = "Your order #" + orderId + " has been placed successfully.";
+                dbHelper.addNotification(userId, title, message);
+                com.sunit.groceryplus.utils.NotificationUtils.showNotification(context, title, message);
+            }
+            return orderId;
         } catch (Exception e) {
             Log.e(TAG, "Error creating order", e);
             return -1;
@@ -81,9 +90,16 @@ public class OrderRepository {
     /**
      * Update order status
      */
-    public boolean updateOrderStatus(int orderId, String status) {
+    public boolean updateOrderStatus(int orderId, int userId, String status) {
         try {
-            return dbHelper.updateOrderStatus(orderId, status);
+            boolean success = dbHelper.updateOrderStatus(orderId, status);
+            if (success) {
+                String title = "Order Update";
+                String message = "Your order #" + orderId + " is now " + status;
+                dbHelper.addNotification(userId, title, message);
+                com.sunit.groceryplus.utils.NotificationUtils.showNotification(context, title, message);
+            }
+            return success;
         } catch (Exception e) {
             Log.e(TAG, "Error updating order status", e);
             return false;
@@ -98,14 +114,15 @@ public class OrderRepository {
             // Get all user orders
             List<Order> orders = dbHelper.getOrdersByUser(userId);
             if (orders != null && !orders.isEmpty()) {
-                // Assuming orders are returned sorted by date DESC or ID DESC
-                // If not, we should sort or get the one with max ID
-                // DatabaseHelper.getOrdersByUser usually sorts by date desc
                 return orders.get(0); 
             }
         } catch (Exception e) {
             Log.e(TAG, "Error getting last order", e);
         }
         return null;
+    }
+
+    public boolean assignDeliveryPerson(int orderId, int deliveryPersonId) {
+        return dbHelper.assignDeliveryPerson(orderId, deliveryPersonId);
     }
 }

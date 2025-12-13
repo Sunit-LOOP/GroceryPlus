@@ -20,6 +20,15 @@ public class UserProfileActivity extends AppCompatActivity {
         // Setup Bottom Navigation
         com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
 
+        // Setup Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.userProfileToolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("User Profile");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
         // TODO: Implement user profile functionality
     }
 }

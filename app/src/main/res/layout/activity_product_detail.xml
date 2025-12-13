@@ -9,34 +9,43 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                android:layout_marginBottom="16dp">
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="-20dp">
+                
+                <ImageView
+                    android:id="@+id/productDetailImageIv"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/product_icon"
+                    android:contentDescription="Product Image" />
+                    
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/productDetailImageIv"
-                        android:layout_width="match_parent"
-                        android:layout_height="250dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/product_icon"
-                        android:contentDescription="Product Image" />
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/productDetailNameTv"
@@ -44,9 +53,9 @@
                         android:layout_height="wrap_content"
                         android:text="Product Name"
                         android:textSize="24sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/black"
-                        android:layout_marginTop="16dp" />
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#212121"
+                        android:layout_marginTop="8dp" />
 
                     <TextView
                         android:id="@+id/productDetailCategoryTv"
@@ -54,99 +63,87 @@
                         android:layout_height="wrap_content"
                         android:text="Category"
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray"
+                        android:textColor="#757575"
                         android:layout_marginTop="4dp" />
-
-                    <TextView
-                        android:id="@+id/productDetailPriceTv"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Rs. 0.00"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/holo_green_dark"
-                        android:layout_marginTop="12dp" />
-
-                    <TextView
-                        android:id="@+id/productDetailDescriptionTv"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Product description goes here"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/black"
-                        android:layout_marginTop="16dp"
-                        android:lineSpacingExtra="4dp" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Quantity"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/black" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical">
-
-                        <ImageButton
-                            android:id="@+id/productDetailDecreaseBtn"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@android:drawable/ic_delete"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Decrease quantity" />
-
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="24dp">
+                        
                         <TextView
-                            android:id="@+id/productDetailQuantityTv"
-                            android:layout_width="80dp"
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:text="Quantity"
+                           android:textSize="16sp"
+                           android:fontFamily="sans-serif-medium"
+                           android:textColor="#212121"/>
+                           
+                        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>   
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="1"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:gravity="center"
-                            android:layout_marginHorizontal="16dp" />
-
-                        <ImageButton
-                            android:id="@+id/productDetailIncreaseBtn"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@android:drawable/ic_input_add"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Increase quantity" />
-
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/rounded_gray_background">
+    
+                            <ImageButton
+                                android:id="@+id/productDetailDecreaseBtn"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_remove"
+                                android:padding="10dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Decrease"
+                                app:tint="#757575"/>
+    
+                            <TextView
+                                android:id="@+id/productDetailQuantityTv"
+                                android:layout_width="40dp"
+                                android:layout_height="wrap_content"
+                                android:text="1"
+                                android:textSize="18sp"
+                                android:fontFamily="sans-serif-medium"
+                                android:gravity="center"
+                                android:textColor="#212121"/>
+    
+                            <ImageButton
+                                android:id="@+id/productDetailIncreaseBtn"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_add"
+                                android:padding="10dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Increase"
+                                app:tint="#757575"/>
+    
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/productDetailAddToCartBtn"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Description"
+                        android:textSize="18sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#212121"
+                        android:layout_marginTop="32dp"/>
+
+                    <TextView
+                        android:id="@+id/productDetailDescriptionTv"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Add to Cart"
+                        android:text="Product description goes here. It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout."
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="16dp"
-                        android:backgroundTint="#4CAF50"
-                        android:textColor="@android:color/white"
-                        android:padding="16dp" />
+                        android:textColor="#616161"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="6dp" />
+                        
+                    <!-- Space for bottom bar -->
+                    <View android:layout_width="match_parent" android:layout_height="80dp"/>
 
                 </LinearLayout>
 
@@ -156,7 +153,62 @@
 
     </ScrollView>
 
-    <!-- Custom Bottom Navigation -->
-    <include layout="@layout/bottom_navigation_custom" />
+    <!-- Sticky Bottom ACTION Bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="16dp"
+        app:cardCornerRadius="0dp">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+            
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Price"
+                    android:textSize="12sp"
+                    android:textColor="#757575"/>
+                    
+                <TextView
+                    android:id="@+id/productDetailPriceTv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rs. 0.00"
+                    android:textSize="24sp"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="#4CAF50" />
+            </LinearLayout>
+            
+            <Button
+                android:id="@+id/productDetailAddToCartBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add to Cart"
+                android:textSize="16sp"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="12dp"
+                app:cornerRadius="24dp"
+                android:backgroundTint="#4CAF50"
+                android:textColor="@android:color/white"/>
+            
+        </LinearLayout>
+        
+    </com.google.android.material.card.MaterialCardView>
 
+    <!-- Original Nav - Removed or kept? Usually detail screen doesn't have bottom nav, it has Add to Cart. 
+         But file had it. I will REMOVE bottom nav from Detail Screen as it's a leaf node. 
+         Wait, user might want to go back home. But standard is back button. 
+         I will Remove bottom nav to focus on purchase. -->
+    
 </LinearLayout>

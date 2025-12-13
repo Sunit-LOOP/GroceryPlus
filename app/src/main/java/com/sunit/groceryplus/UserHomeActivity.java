@@ -65,6 +65,10 @@ public class UserHomeActivity extends AppCompatActivity {
         // Initialize views
         initViews();
 
+        // Setup Toolbar
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.homeToolbar);
+        setSupportActionBar(toolbar);
+
         // Setup RecyclerViews
         setupRecyclerViews();
 
@@ -84,6 +88,13 @@ public class UserHomeActivity extends AppCompatActivity {
         navHistory = findViewById(R.id.navHistory);
         navCart = findViewById(R.id.navCart);
         navProfile = findViewById(R.id.navProfile);
+
+        // Setup Search Bar
+        findViewById(R.id.btnSearchField).setOnClickListener(v -> {
+            Intent intent = new Intent(UserHomeActivity.this, SearchActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivity(intent);
+        });
     }
 
     private void setupRecyclerViews() {
@@ -175,11 +186,15 @@ public class UserHomeActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
-        if (item.getItemId() == R.id.action_notification) {
-            Intent intent = new Intent(this, NotificationActivity.class);
+        int id = item.getItemId();
+        
+        if (id == R.id.action_search) {
+            Intent intent = new Intent(this, SearchActivity.class);
+            intent.putExtra("user_id", userId);
             startActivity(intent);
             return true;
         }
+        
         return super.onOptionsItemSelected(item);
     }
 
@@ -216,6 +231,7 @@ public class UserHomeActivity extends AppCompatActivity {
         }
     };
 
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -226,6 +242,20 @@ public class UserHomeActivity extends AppCompatActivity {
         bannerImage = findViewById(R.id.bannerImage);
         if (bannerImage != null && bannerResources.length > 0) {
             bannerHandler.postDelayed(bannerRunnable, 3000);
+        }
+
+        checkNotificationPermission();
+    }
+
+    private void checkNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, 
+                android.Manifest.permission.POST_NOTIFICATIONS) != 
+                android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                
+                androidx.core.app.ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
         }
     }
 
