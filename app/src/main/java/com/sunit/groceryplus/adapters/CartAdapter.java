@@ -64,6 +64,11 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         }
         return total;
     }
+    
+    // Method to calculate total price including delivery fee
+    public double getTotalPriceWithDelivery() {
+        return getTotalPrice() + 50.0; // Rs. 50 delivery fee
+    }
 
     class ViewHolder extends RecyclerView.ViewHolder {
         TextView productNameTv, priceTv, quantityTv, subtotalTv;

@@ -34,6 +34,7 @@ public class PaymentActivity extends AppCompatActivity {
     // Data
     private int userId;
     private double totalAmount;
+    private double subtotalAmount;
     private String selectedPaymentMethod = "stripe"; // default
     
     private CartRepository cartRepository;
@@ -52,6 +53,7 @@ public class PaymentActivity extends AppCompatActivity {
         }
 
         totalAmount = getIntent().getDoubleExtra("total_amount", 0.0);
+        subtotalAmount = getIntent().getDoubleExtra("subtotal_amount", totalAmount - 50.0); // Default to total minus delivery if not provided
         int totalItems = getIntent().getIntExtra("total_items", 0);
 
         if (userId == -1) {
@@ -158,8 +160,8 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void displayOrderSummary() {
         double deliveryFee = 50.0;
-        // Assuming totalAmount passed is the final amount to pay
-        subtotalAmountTv.setText("₹" + String.format("%.2f", totalAmount)); 
+        // Display subtotal and delivery fee separately
+        subtotalAmountTv.setText("₹" + String.format("%.2f", subtotalAmount)); 
         totalAmountTv.setText("₹" + String.format("%.2f", totalAmount));
         updatePayButtonText();
     }
@@ -229,6 +231,10 @@ public class PaymentActivity extends AppCompatActivity {
                 
                 if (allItemsAdded) {
                     cartRepository.clearCart(userId);
+                    
+                    // Record payment
+                    String transactionId = "TXN" + System.currentTimeMillis();
+                    orderRepository.recordPayment((int) orderId, totalAmount, paymentMethod, transactionId);
                     
                     String message = paymentMethod.equals("stripe") 
                         ? "Payment successful! Order placed." 

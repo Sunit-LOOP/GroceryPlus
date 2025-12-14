@@ -184,20 +184,6 @@ public class UserHomeActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(android.view.MenuItem item) {
-        int id = item.getItemId();
-        
-        if (id == R.id.action_search) {
-            Intent intent = new Intent(this, SearchActivity.class);
-            intent.putExtra("user_id", userId);
-            startActivity(intent);
-            return true;
-        }
-        
-        return super.onOptionsItemSelected(item);
-    }
-
     // Banner Rotation
     private android.widget.ImageView bannerImage;
     private android.os.Handler bannerHandler = new android.os.Handler();

@@ -1283,6 +1283,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
     // ==================== PAYMENT METHODS ====================
     
+    public long addPayment(int orderId, double amount, String paymentMethod, String transactionId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        
+        try {
+            ContentValues values = new ContentValues();
+            values.put(DatabaseContract.PaymentEntry.COLUMN_NAME_ORDER_ID, orderId);
+            values.put(DatabaseContract.PaymentEntry.COLUMN_NAME_AMOUNT, amount);
+            values.put(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_METHOD, paymentMethod);
+            values.put(DatabaseContract.PaymentEntry.COLUMN_NAME_TRANSACTION_ID, transactionId);
+            
+            // Inserting Row
+            long paymentId = db.insert(DatabaseContract.PaymentEntry.TABLE_NAME, null, values);
+            return paymentId;
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding payment", e);
+            return -1;
+        } finally {
+            db.close();
+        }
+    }
+    
     public Cursor getAllPayments() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(DatabaseContract.PaymentEntry.TABLE_NAME, null, null, null, null, null, DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_DATE + " DESC");

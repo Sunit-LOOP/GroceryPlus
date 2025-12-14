@@ -125,4 +125,17 @@ public class OrderRepository {
     public boolean assignDeliveryPerson(int orderId, int deliveryPersonId) {
         return dbHelper.assignDeliveryPerson(orderId, deliveryPersonId);
     }
+    
+    /**
+     * Record payment for an order
+     */
+    public boolean recordPayment(int orderId, double amount, String paymentMethod, String transactionId) {
+        try {
+            long result = dbHelper.addPayment(orderId, amount, paymentMethod, transactionId);
+            return result != -1;
+        } catch (Exception e) {
+            Log.e(TAG, "Error recording payment", e);
+            return false;
+        }
+    }
 }

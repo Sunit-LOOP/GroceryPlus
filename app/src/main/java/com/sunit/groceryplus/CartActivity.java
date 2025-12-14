@@ -186,7 +186,8 @@ public class CartActivity extends AppCompatActivity {
     
     private void updateTotalPrice() {
         double total = cartAdapter.getTotalPrice();
-        totalPriceTv.setText("Total: Rs. " + String.format("%.2f", total));
+        double totalWithDelivery = cartAdapter.getTotalPriceWithDelivery();
+        totalPriceTv.setText("Total: Rs. " + String.format("%.2f", total) + " (Including Delivery: Rs. " + String.format("%.2f", totalWithDelivery) + ")");
     }
     
     private void showCart() {
@@ -219,14 +220,15 @@ public class CartActivity extends AppCompatActivity {
         }
         
         try {
-            // Calculate total
-            double total = cartAdapter.getTotalPrice();
+            // Calculate total with delivery fee
+            double totalWithDelivery = cartAdapter.getTotalPriceWithDelivery();
             int itemCount = cartItems.size();
             
             // Navigate to payment activity
             Intent intent = new Intent(CartActivity.this, PaymentActivity.class);
             intent.putExtra("user_id", userId);
-            intent.putExtra("total_amount", total);
+            intent.putExtra("total_amount", totalWithDelivery);
+            intent.putExtra("subtotal_amount", cartAdapter.getTotalPrice());
             intent.putExtra("total_items", itemCount);
             startActivity(intent);
             

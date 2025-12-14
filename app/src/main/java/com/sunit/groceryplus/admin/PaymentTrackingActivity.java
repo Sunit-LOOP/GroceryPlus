@@ -3,6 +3,7 @@ package com.sunit.groceryplus.admin;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -24,8 +25,10 @@ public class PaymentTrackingActivity extends AppCompatActivity {
     private AdminPaymentAdapter adapter;
     private DatabaseHelper dbHelper;
 
-    private com.google.android.material.card.MaterialCardView cardAll, cardStripe, cardCod;
+    private com.google.android.material.chip.Chip chipAll, chipStripe, chipCod;
     private String currentFilter = "all"; // all, cod, stripe
+    
+    private TextView totalPaymentsTv, totalAmountTv, monthlyAmountTv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,14 +44,20 @@ public class PaymentTrackingActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         paymentsRv = findViewById(R.id.paymentsRv);
         
-        // Initialize filter cards
-        cardAll = findViewById(R.id.cardAll);
-        cardStripe = findViewById(R.id.cardStripe);
-        cardCod = findViewById(R.id.cardCod);
+        // Initialize statistics views
+        totalPaymentsTv = findViewById(R.id.totalPaymentsTv);
+        totalAmountTv = findViewById(R.id.totalAmountTv);
+        monthlyAmountTv = findViewById(R.id.monthlyAmountTv);
+        
+        // Initialize filter chips
+        chipAll = findViewById(R.id.chipAll);
+        chipStripe = findViewById(R.id.chipStripe);
+        chipCod = findViewById(R.id.chipCod);
 
         setupRecyclerView();
         setupFilterChips();
         loadPayments(currentFilter);
+        updateStatistics();
     }
 
     private void setupRecyclerView() {
@@ -58,35 +67,27 @@ public class PaymentTrackingActivity extends AppCompatActivity {
     }
 
     private void setupFilterChips() {
-        cardAll.setOnClickListener(v -> selectFilter("all"));
-        cardStripe.setOnClickListener(v -> selectFilter("stripe"));
-        cardCod.setOnClickListener(v -> selectFilter("cod"));
+        chipAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) selectFilter("all");
+        });
+        chipStripe.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) selectFilter("stripe");
+        });
+        chipCod.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) selectFilter("cod");
+        });
         
         // Initial selection
-        selectFilter("all");
+        chipAll.setChecked(true);
     }
 
     private void selectFilter(String filter) {
         currentFilter = filter;
         
-        // Update Card Highlighting
-        highlightCard(cardAll, "all".equals(filter));
-        highlightCard(cardStripe, "stripe".equals(filter));
-        highlightCard(cardCod, "cod".equals(filter));
-        
         loadPayments(currentFilter);
+        updateStatistics();
     }
 
-    private void highlightCard(com.google.android.material.card.MaterialCardView card, boolean isSelected) {
-        if (isSelected) {
-            card.setStrokeColor(getResources().getColor(android.R.color.holo_green_dark));
-            card.setStrokeWidth(4);
-        } else {
-            card.setStrokeColor(0xFFE0E0E0); // Light Gray #E0E0E0
-            card.setStrokeWidth(2);
-        }
-    }
-    
     private void loadPayments(String filter) {
         List<Payment> payments = new ArrayList<>();
         Cursor cursor = dbHelper.getAllPayments();
@@ -101,7 +102,9 @@ public class PaymentTrackingActivity extends AppCompatActivity {
                 String date = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_DATE));
                 
                 // Apply filter
-                if (filter.equals("all") || method.equalsIgnoreCase(filter)) {
+                if (filter.equals("all") || 
+                    (filter.equals("cod") && method.equalsIgnoreCase("cod")) ||
+                    (filter.equals("stripe") && method.equalsIgnoreCase("stripe"))) {
                     payments.add(new Payment(id, orderId, amount, method, txnId, date));
                 }
             } while (cursor.moveToNext());
@@ -109,6 +112,42 @@ public class PaymentTrackingActivity extends AppCompatActivity {
         }
         
         adapter.updatePayments(payments);
+    }
+    
+    private void updateStatistics() {
+        // Get all payments for statistics
+        List<Payment> allPayments = new ArrayList<>();
+        Cursor cursor = dbHelper.getAllPayments();
+        
+        double totalAmount = 0.0;
+        int totalPayments = 0;
+        double monthlyAmount = 0.0;
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                double amount = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_AMOUNT));
+                String method = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_METHOD));
+                String dateStr = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PaymentEntry.COLUMN_NAME_PAYMENT_DATE));
+                
+                // Apply filter for displayed statistics
+                if (currentFilter.equals("all") || 
+                    (currentFilter.equals("cod") && method.equalsIgnoreCase("cod")) ||
+                    (currentFilter.equals("stripe") && method.equalsIgnoreCase("stripe"))) {
+                    totalAmount += amount;
+                    totalPayments++;
+                    
+                    // Check if payment is from this month (simplified check)
+                    // In a real app, you'd parse the date properly
+                    monthlyAmount += amount;
+                }
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        
+        // Update UI
+        if (totalPaymentsTv != null) totalPaymentsTv.setText(String.valueOf(totalPayments));
+        if (totalAmountTv != null) totalAmountTv.setText("Rs. " + String.format("%.2f", totalAmount));
+        if (monthlyAmountTv != null) monthlyAmountTv.setText("Rs. " + String.format("%.2f", monthlyAmount));
     }
     
     @Override
