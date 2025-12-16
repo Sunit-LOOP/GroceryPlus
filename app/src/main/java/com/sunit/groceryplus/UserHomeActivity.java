@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +20,7 @@ import com.sunit.groceryplus.models.Category;
 import com.sunit.groceryplus.models.Product;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class UserHomeActivity extends AppCompatActivity {
@@ -30,6 +33,7 @@ public class UserHomeActivity extends AppCompatActivity {
     private LinearLayout navHistory;
     private LinearLayout navCart;
     private LinearLayout navProfile;
+    private ImageView sortIcon;
     private int userId;
     
     private CategoryRepository categoryRepository;
@@ -42,6 +46,7 @@ public class UserHomeActivity extends AppCompatActivity {
     private List<Category> categories = new ArrayList<>();
     private List<Product> products = new ArrayList<>();
     private int selectedCategoryId = -1;
+    private String currentSortOrder = "default"; // Track current sort order
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +69,9 @@ public class UserHomeActivity extends AppCompatActivity {
 
         // Initialize views
         initViews();
+        
+        // Setup sort functionality
+        setupSortFunctionality();
 
         // Setup Toolbar
         com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.homeToolbar);
@@ -88,6 +96,7 @@ public class UserHomeActivity extends AppCompatActivity {
         navHistory = findViewById(R.id.navHistory);
         navCart = findViewById(R.id.navCart);
         navProfile = findViewById(R.id.navProfile);
+        sortIcon = findViewById(R.id.sortIcon);
 
         // Setup Search Bar
         findViewById(R.id.btnSearchField).setOnClickListener(v -> {
@@ -141,7 +150,15 @@ public class UserHomeActivity extends AppCompatActivity {
             }
             
             if (products != null && !products.isEmpty()) {
-                productAdapter.updateProducts(products);
+                // Apply current sort order if needed
+                List<Product> displayProducts = new ArrayList<>(products);
+                if ("price_low_high".equals(currentSortOrder)) {
+                    displayProducts = com.sunit.groceryplus.utils.SearchSortAlgorithms.quickSortByPrice(products);
+                } else if ("price_high_low".equals(currentSortOrder)) {
+                    displayProducts = com.sunit.groceryplus.utils.SearchSortAlgorithms.quickSortByPrice(products);
+                    Collections.reverse(displayProducts);
+                }
+                productAdapter.updateProducts(displayProducts);
                 Log.d(TAG, "Loaded " + products.size() + " products");
             } else {
                 Log.w(TAG, "No products found");
@@ -176,6 +193,53 @@ public class UserHomeActivity extends AppCompatActivity {
     private void setBottomNavigationListener() {
         // Use common NavigationHelper
         com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
+    }
+    
+    private void setupSortFunctionality() {
+        sortIcon.setOnClickListener(v -> showSortOptions());
+    }
+    
+    private void showSortOptions() {
+        // Create popup menu for sorting options
+        android.widget.PopupMenu popup = new android.widget.PopupMenu(this, sortIcon);
+        popup.getMenuInflater().inflate(R.menu.sort_options_menu, popup.getMenu());
+        
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getTitle().equals("Price: Low to High")) {
+                sortProductsByPriceLowToHigh();
+                return true;
+            } else if (item.getTitle().equals("Price: High to Low")) {
+                sortProductsByPriceHighToLow();
+                return true;
+            }
+            return false;
+        });
+        
+        popup.show();
+    }
+    
+    private void sortProductsByPriceLowToHigh() {
+        if (products != null && !products.isEmpty()) {
+            // Use the existing SearchSortAlgorithms utility class
+            java.util.List<com.sunit.groceryplus.models.Product> sortedProducts = 
+                com.sunit.groceryplus.utils.SearchSortAlgorithms.quickSortByPrice(products);
+            productAdapter.updateProducts(sortedProducts);
+            currentSortOrder = "price_low_high";
+            Toast.makeText(this, "Sorted by price: Low to High", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void sortProductsByPriceHighToLow() {
+        if (products != null && !products.isEmpty()) {
+            // Use the existing SearchSortAlgorithms utility class
+            java.util.List<com.sunit.groceryplus.models.Product> sortedProducts = 
+                com.sunit.groceryplus.utils.SearchSortAlgorithms.quickSortByPrice(products);
+            // Reverse the list for high to low sorting
+            java.util.Collections.reverse(sortedProducts);
+            productAdapter.updateProducts(sortedProducts);
+            currentSortOrder = "price_high_low";
+            Toast.makeText(this, "Sorted by price: High to Low", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

@@ -12,12 +12,28 @@ public class Product {
     private String description;
     private String image;
     private int stock;
+    private double rating;
 
     // Default constructor
     public Product() {
+        this.rating = 0.0; // Default rating
     }
 
     // Constructor with all fields
+    public Product(int productId, String productName, int categoryId, String categoryName, 
+                   double price, String description, String image, int stock, double rating) {
+        this.productId = productId;
+        this.productName = productName;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
+        this.price = price;
+        this.description = description;
+        this.image = image;
+        this.stock = stock;
+        this.rating = rating;
+    }
+
+    // Constructor used by DatabaseHelper (without rating)
     public Product(int productId, String productName, int categoryId, String categoryName, 
                    double price, String description, String image, int stock) {
         this.productId = productId;
@@ -28,6 +44,7 @@ public class Product {
         this.description = description;
         this.image = image;
         this.stock = stock;
+        this.rating = 0.0; // Default rating
     }
 
     // Constructor without ID (for new products)
@@ -38,6 +55,7 @@ public class Product {
         this.description = description;
         this.image = image;
         this.stock = stock;
+        this.rating = 0.0; // Default rating
     }
 
     // Getters and Setters
@@ -107,6 +125,14 @@ public class Product {
 
     public boolean isInStock() {
         return stock > 0;
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
     }
 
     @Override
