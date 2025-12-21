@@ -2,6 +2,7 @@ package com.sunit.groceryplus;
 
 import android.content.Context;
 import android.util.Log;
+import com.sunit.groceryplus.models.User;
 
 /**
  * Test class to demonstrate DatabaseHelper usage

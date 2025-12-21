@@ -3,6 +3,7 @@ package com.sunit.groceryplus;
 import android.content.Context;
 import android.util.Log;
 
+import com.sunit.groceryplus.models.User;
 import com.sunit.groceryplus.models.CartItem;
 
 import java.util.ArrayList;

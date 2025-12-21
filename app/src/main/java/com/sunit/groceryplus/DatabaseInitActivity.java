@@ -5,6 +5,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.sunit.groceryplus.models.User;
 
 /**
  * Activity to demonstrate database initialization and usage
@@ -50,7 +51,7 @@ public class DatabaseInitActivity extends AppCompatActivity {
 
         try {
             // Test 1: Check if default admin exists
-            User adminUser = dbHelper.authenticateUser("admin@gmail.com", "admin123");
+            User adminUser = dbHelper.authenticateUser("admin@groceryplus.com", "admin123");
             if (adminUser != null) {
                 Log.d(TAG, "Default admin authenticated: " + adminUser.getName() + " (" + adminUser.getUserType() + ")");
                 Toast.makeText(this, "Default admin found: " + adminUser.getName(), Toast.LENGTH_SHORT).show();

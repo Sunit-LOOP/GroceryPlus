@@ -120,8 +120,15 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
 
             decreaseBtn.setOnClickListener(v -> {
                 int newQuantity = item.getQuantity() - 1;
-                if (newQuantity > 0 && quantityChangeListener != null) {
-                    quantityChangeListener.onQuantityChanged(item.getCartId(), newQuantity);
+                if (newQuantity > 0) {
+                    if (quantityChangeListener != null) {
+                        quantityChangeListener.onQuantityChanged(item.getCartId(), newQuantity);
+                    }
+                } else if (newQuantity == 0) {
+                    if (quantityChangeListener != null) {
+                        // If quantity reaches 0, treat it as removal
+                        quantityChangeListener.onItemRemoved(item.getCartId());
+                    }
                 }
             });
 

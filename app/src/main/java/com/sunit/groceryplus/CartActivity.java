@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sunit.groceryplus.adapters.CartAdapter;
+import com.sunit.groceryplus.models.User;
 import com.sunit.groceryplus.models.CartItem;
 // Fixed import - CartRepository is in the same package
 import com.sunit.groceryplus.CartRepository;
@@ -77,9 +78,18 @@ public class CartActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.cart_menu, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
+            return true;
+        } else if (item.getItemId() == R.id.action_clear_cart) {
+            showClearCartConfirmation();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -147,6 +157,38 @@ public class CartActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error updating quantity", e);
             Toast.makeText(this, "Error updating quantity", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void showClearCartConfirmation() {
+        if (cartItems == null || cartItems.isEmpty()) {
+            Toast.makeText(this, "Cart is already empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Clear Cart")
+                .setMessage("Are you sure you want to remove all items from your cart?")
+                .setPositiveButton("Clear All", (dialog, which) -> clearCart())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void clearCart() {
+        try {
+            boolean success = cartRepository.clearCart(userId);
+            if (success) {
+                cartItems.clear();
+                cartAdapter.notifyDataSetChanged();
+                updateTotalPrice();
+                showEmptyCart();
+                Toast.makeText(this, "Cart cleared", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Failed to clear cart", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error clearing cart", e);
+            Toast.makeText(this, "Error clearing cart", Toast.LENGTH_SHORT).show();
         }
     }
     

@@ -25,6 +25,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
     public interface OnOrderClickListener {
         void onOrderClick(Order order);
+        void onReorderClick(Order order);
     }
 
     public OrderAdapter(Context context, List<Order> orders, OnOrderClickListener listener) {
@@ -62,6 +63,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         TextView orderStatusTv;
         TextView orderTotalTv;
         TextView orderItemCountTv;
+        View reorderBtn;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -70,6 +72,14 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             orderStatusTv = itemView.findViewById(R.id.orderStatusTv);
             orderTotalTv = itemView.findViewById(R.id.orderTotalTv);
             orderItemCountTv = itemView.findViewById(R.id.orderItemCountTv);
+            reorderBtn = itemView.findViewById(R.id.reorderBtn);
+
+            reorderBtn.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onReorderClick(orders.get(position));
+                }
+            });
 
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();

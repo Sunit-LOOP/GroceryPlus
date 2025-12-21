@@ -219,6 +219,17 @@
 
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/manageAddressesButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Manage Addresses"
+                app:icon="@drawable/category_icon"
+                app:strokeColor="#4CAF50"
+                android:textColor="#4CAF50" />
+
         </LinearLayout>
 
     </ScrollView>

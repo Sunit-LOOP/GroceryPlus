@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 import android.widget.Toast;
@@ -31,6 +32,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     private DatabaseHelper dbHelper;
     private FavoriteRepository favoriteRepository;
     private int userId;
+    private OnCartUpdateListener cartUpdateListener;
+
+    public interface OnCartUpdateListener {
+        void onCartUpdated();
+    }
 
     public ProductAdapter(Context context, List<Product> productList, int userId) {
         this.context = context;
@@ -38,6 +44,10 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         this.dbHelper = new DatabaseHelper(context);
         this.favoriteRepository = new FavoriteRepository(context);
         this.userId = userId;
+    }
+
+    public void setCartUpdateListener(OnCartUpdateListener listener) {
+        this.cartUpdateListener = listener;
     }
 
     public void setFilteredList(List<Product> filteredList) {
@@ -68,6 +78,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         // Ideally pass category name or fetch it, for now hardcoded or skipped if not in model
          holder.productCategory.setText("Groceries"); // Placeholder or fetch logic
 
+        if (product.getVendorName() != null) {
+            holder.productVendor.setText(product.getVendorName());
+            holder.productVendor.setVisibility(View.VISIBLE);
+        } else {
+            holder.productVendor.setVisibility(View.GONE);
+        }
+
         // Load product image with better fallbacks
         String imageName = product.getImage();
         if (imageName != null && !imageName.isEmpty()) {
@@ -86,23 +103,86 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
             holder.productImage.setImageResource(specificImage);
         }
 
+        // Stock Badge Logic
+        if (product.getStockQuantity() <= 0) {
+            holder.stockBadge.setVisibility(View.VISIBLE);
+            holder.stockBadge.setText("Out of Stock");
+            holder.stockBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+            holder.addToCartBtn.setEnabled(false);
+            holder.addToCartBtn.setAlpha(0.5f);
+        } else if (product.getStockQuantity() < 10) {
+            holder.stockBadge.setVisibility(View.VISIBLE);
+            holder.stockBadge.setText("Only " + product.getStockQuantity() + " left");
+            holder.stockBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+            holder.addToCartBtn.setEnabled(true);
+            holder.addToCartBtn.setAlpha(1.0f);
+        } else {
+            holder.stockBadge.setVisibility(View.GONE);
+            holder.addToCartBtn.setEnabled(true);
+            holder.addToCartBtn.setAlpha(1.0f);
+        }
+
+        // Cart Quantity Logic
+        int currentQty = dbHelper.getProductQuantityInCart(userId, product.getProductId());
+        updateQuantityUI(holder, currentQty);
+
+        holder.addToCartBtn.setOnClickListener(v -> {
+            if (userId == -1) {
+                Toast.makeText(context, "Please login to add items", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            long result = dbHelper.addToCart(userId, product.getProductId(), 1);
+            if (result != -1) {
+                updateQuantityUI(holder, 1);
+                if (cartUpdateListener != null) cartUpdateListener.onCartUpdated();
+                v.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in));
+            } else {
+                Toast.makeText(context, "Failed to add to cart", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        holder.btnPlus.setOnClickListener(v -> {
+            int newQty = dbHelper.getProductQuantityInCart(userId, product.getProductId()) + 1;
+            if (newQty > product.getStockQuantity()) {
+                Toast.makeText(context, "Cannot add more than available stock", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            dbHelper.updateCartQuantity(userId, product.getProductId(), newQty);
+            updateQuantityUI(holder, newQty);
+            if (cartUpdateListener != null) cartUpdateListener.onCartUpdated();
+        });
+
+        holder.btnMinus.setOnClickListener(v -> {
+            int current = dbHelper.getProductQuantityInCart(userId, product.getProductId());
+            if (current > 1) {
+                dbHelper.updateCartQuantity(userId, product.getProductId(), current - 1);
+                updateQuantityUI(holder, current - 1);
+            } else {
+                dbHelper.removeFromCart(userId, product.getProductId());
+                updateQuantityUI(holder, 0);
+            }
+            if (cartUpdateListener != null) cartUpdateListener.onCartUpdated();
+        });
+
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, ProductDetailActivity.class);
             intent.putExtra("product_id", product.getProductId());
-             intent.putExtra("user_id", userId);
+            intent.putExtra("user_id", userId);
             context.startActivity(intent);
-        });
-
-        // Add to Cart Click
-        holder.addToCartBtn.setOnClickListener(v -> {
-             dbHelper.addToCart(userId, product.getProductId(), 1);
-             Toast.makeText(context, "Added to cart", Toast.LENGTH_SHORT).show();
         });
         
         // Favorite Logic
         boolean isFav = favoriteRepository.isInFavorites(userId, product.getProductId());
         holder.favoriteBtn.setChecked(isFav);
         
+        // Rating Badge
+        if (product.getRating() > 0) {
+            holder.productRatingBadge.setVisibility(View.VISIBLE);
+            holder.productRatingBadge.setText(String.format("%.1f ★", product.getRating()));
+        } else {
+            holder.productRatingBadge.setVisibility(View.GONE);
+        }
+
         holder.favoriteBtn.setOnClickListener(v -> {
             if (holder.favoriteBtn.isChecked()) {
                 favoriteRepository.addToFavorites(userId, product.getProductId());
@@ -115,6 +195,17 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
 
         // Animation
         holder.itemView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in));
+    }
+
+    private void updateQuantityUI(ViewHolder holder, int quantity) {
+        if (quantity > 0) {
+            holder.addToCartBtn.setVisibility(View.GONE);
+            holder.quantityLayout.setVisibility(View.VISIBLE);
+            holder.tvQuantity.setText(String.valueOf(quantity));
+        } else {
+            holder.addToCartBtn.setVisibility(View.VISIBLE);
+            holder.quantityLayout.setVisibility(View.GONE);
+        }
     }
 
     /**
@@ -179,8 +270,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView productImage;
-        TextView productName, productPrice, productCategory;
-        View addToCartBtn;
+        TextView productName, productPrice, productCategory, stockBadge, tvQuantity, productRatingBadge, productVendor;
+        View addToCartBtn, quantityLayout;
+        ImageButton btnMinus, btnPlus;
         ToggleButton favoriteBtn;
 
         public ViewHolder(@NonNull View itemView) {
@@ -189,7 +281,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
             productName = itemView.findViewById(R.id.productName);
             productPrice = itemView.findViewById(R.id.productPrice);
             productCategory = itemView.findViewById(R.id.productCategory);
+            productVendor = itemView.findViewById(R.id.productVendor);
+            productRatingBadge = itemView.findViewById(R.id.productRatingBadge);
+            stockBadge = itemView.findViewById(R.id.stockBadge);
+            tvQuantity = itemView.findViewById(R.id.tvQuantity);
             addToCartBtn = itemView.findViewById(R.id.addToCartBtn);
+            quantityLayout = itemView.findViewById(R.id.quantityLayout);
+            btnMinus = itemView.findViewById(R.id.btnMinus);
+            btnPlus = itemView.findViewById(R.id.btnPlus);
             favoriteBtn = itemView.findViewById(R.id.favoriteBtn);
         }
     }

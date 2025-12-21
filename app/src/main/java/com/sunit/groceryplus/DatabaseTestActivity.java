@@ -3,7 +3,7 @@ package com.sunit.groceryplus;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-
+import com.sunit.groceryplus.models.User;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class DatabaseTestActivity extends AppCompatActivity {
@@ -14,6 +14,10 @@ public class DatabaseTestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main); // Using existing layout for demo
         
+        // Initialize Database and run migration
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        dbHelper.checkAndAssignDefaultVendor();
+
         // Run database tests
         testDatabaseOperations();
     }
@@ -70,7 +74,7 @@ public class DatabaseTestActivity extends AppCompatActivity {
             
             // Test 5: Add product
             ProductRepository productRepository = new ProductRepository(this);
-            boolean productAdded = productRepository.addProduct("Apple", 1, 1.99, "Fresh red apple", "apple.jpg");
+            boolean productAdded = productRepository.addProduct("Apple", 1, 1.99, "Fresh red apple", "apple.jpg", 100, 1);
             if (productAdded) {
                 Log.d(TAG, "Product added successfully");
                 Toast.makeText(this, "Product added successfully", Toast.LENGTH_SHORT).show();
@@ -92,7 +96,7 @@ public class DatabaseTestActivity extends AppCompatActivity {
             
             // Test 7: Create order
             OrderRepository orderRepository = new OrderRepository(this);
-            long orderId = orderRepository.createOrder(newUser.getUserId(), 9.95, "pending");
+            long orderId = orderRepository.createOrder(newUser.getUserId(), 9.95, "pending", 1);
             if (orderId != -1) {
                 Log.d(TAG, "Order created successfully with ID: " + orderId);
                 Toast.makeText(this, "Order created successfully", Toast.LENGTH_SHORT).show();

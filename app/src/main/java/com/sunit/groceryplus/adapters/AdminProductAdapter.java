@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -55,6 +56,23 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         holder.productPriceTv.setText("Rs. " + String.format("%.2f", product.getPrice()));
         if (holder.productDescriptionTv != null) {
             holder.productDescriptionTv.setText(product.getDescription());
+        }
+        
+        holder.productStockTv.setText("Stock: " + product.getStockQuantity());
+        if (product.getStockQuantity() <= 0) {
+            holder.productStockTv.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
+            holder.productStockTv.setText("Out of Stock");
+        } else if (product.getStockQuantity() < 10) {
+            holder.productStockTv.setTextColor(context.getResources().getColor(android.R.color.holo_orange_dark));
+            holder.productStockTv.setText("Low Stock: " + product.getStockQuantity());
+        } else {
+            holder.productStockTv.setTextColor(context.getResources().getColor(android.R.color.black));
+        }
+
+        if (product.getVendorName() != null) {
+            holder.productVendorTv.setText("Vendor: " + product.getVendorName());
+        } else {
+            holder.productVendorTv.setText("Vendor: Not Assigned");
         }
 
         // Set product image based on image name with better fallbacks
@@ -123,9 +141,10 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        TextView productNameTv, productPriceTv, productDescriptionTv;
+        TextView productNameTv, productPriceTv, productDescriptionTv, productStockTv, productVendorTv;
         ImageView productImageIv;
         Button editBtn, deleteBtn;
+        ImageButton viewReviewsBtn;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -133,16 +152,27 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
             productNameTv = itemView.findViewById(R.id.productNameTv);
             productPriceTv = itemView.findViewById(R.id.productPriceTv);
             productDescriptionTv = itemView.findViewById(R.id.productDescriptionTv);
+            productStockTv = itemView.findViewById(R.id.productStockTv);
+            productVendorTv = itemView.findViewById(R.id.productVendorTv);
             productImageIv = itemView.findViewById(R.id.productImageIv);
-            editBtn = itemView.findViewById(R.id.editProductBtn);
-            deleteBtn = itemView.findViewById(R.id.deleteProductBtn);
+            viewReviewsBtn = itemView.findViewById(R.id.viewReviewsBtn);
+            
+            viewReviewsBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        activity.showReviewsDialog(productList.get(position));
+                    }
+                }
+            });
 
             editBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        showEditDialog(position);
+                        activity.showProductDialog(productList.get(position));
                     }
                 }
             });
@@ -152,102 +182,10 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 public void onClick(View v) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        showDeleteConfirmation(position);
+                        activity.showDeleteConfirmationDialog(productList.get(position));
                     }
                 }
             });
-        }
-
-        private void showEditDialog(int position) {
-            Product product = productList.get(position);
-            
-            // Inflate the dialog layout
-            LayoutInflater inflater = LayoutInflater.from(context);
-            View dialogView = inflater.inflate(R.layout.dialog_product, null);
-            
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setView(dialogView);
-            
-            TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
-            EditText productNameEt = dialogView.findViewById(R.id.productNameEt);
-            Spinner categorySpinner = dialogView.findViewById(R.id.categorySpinner);
-            EditText productPriceEt = dialogView.findViewById(R.id.productPriceEt);
-            EditText productStockEt = dialogView.findViewById(R.id.productStockEt);
-            EditText productDescriptionEt = dialogView.findViewById(R.id.productDescriptionEt);
-            EditText productImageEt = dialogView.findViewById(R.id.productImageEt);
-            
-            dialogTitle.setText("Edit Product");
-            productNameEt.setText(product.getProductName());
-            productPriceEt.setText(String.valueOf(product.getPrice()));
-            productDescriptionEt.setText(product.getDescription());
-            productImageEt.setText(product.getImage());
-            
-            // TODO: Populate category spinner with categories and set selection
-            
-            builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    String name = productNameEt.getText().toString().trim();
-                    String priceStr = productPriceEt.getText().toString().trim();
-                    String description = productDescriptionEt.getText().toString().trim();
-                    String image = productImageEt.getText().toString().trim();
-                    String stockStr = productStockEt.getText().toString().trim();
-                    
-                    if (!name.isEmpty() && !priceStr.isEmpty()) {
-                        try {
-                            double price = Double.parseDouble(priceStr);
-                            int stock = stockStr.isEmpty() ? 100 : Integer.parseInt(stockStr);
-                            
-                            boolean success = productRepository.updateProduct(
-                                product.getProductId(), name, product.getCategoryId(), price, description, image
-                            );
-                            
-                            if (success) {
-                                product.setProductName(name);
-                                product.setPrice(price);
-                                product.setDescription(description);
-                                product.setImage(image);
-                                notifyItemChanged(position);
-                                Toast.makeText(context, "Product updated successfully", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(context, "Failed to update product", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (NumberFormatException e) {
-                            Toast.makeText(context, "Invalid price format", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(context, "Please fill all required fields", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-            
-            builder.setNegativeButton("Cancel", null);
-            
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-
-        private void showDeleteConfirmation(int position) {
-            Product product = productList.get(position);
-            
-            new AlertDialog.Builder(context)
-                .setTitle("Delete Product")
-                .setMessage("Are you sure you want to delete " + product.getProductName() + "?")
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        boolean success = productRepository.deleteProduct(product.getProductId());
-                        if (success) {
-                            productList.remove(position);
-                            notifyItemRemoved(position);
-                            Toast.makeText(context, "Product deleted successfully", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(context, "Failed to delete product", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
         }
     }
 }

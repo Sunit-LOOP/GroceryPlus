@@ -11,17 +11,19 @@ public class Product {
     private double price;
     private String description;
     private String image;
-    private int stock;
+    private int stockQuantity;
     private double rating;
+    private int vendorId;
+    private String vendorName;
 
     // Default constructor
     public Product() {
-        this.rating = 0.0; // Default rating
+        this.rating = 0.0;
     }
 
     // Constructor with all fields
     public Product(int productId, String productName, int categoryId, String categoryName, 
-                   double price, String description, String image, int stock, double rating) {
+                   double price, String description, String image, double rating, int stockQuantity, int vendorId, String vendorName) {
         this.productId = productId;
         this.productName = productName;
         this.categoryId = categoryId;
@@ -29,13 +31,15 @@ public class Product {
         this.price = price;
         this.description = description;
         this.image = image;
-        this.stock = stock;
         this.rating = rating;
+        this.stockQuantity = stockQuantity;
+        this.vendorId = vendorId;
+        this.vendorName = vendorName;
     }
 
-    // Constructor used by DatabaseHelper (without rating)
+    // Constructor used by DatabaseHelper
     public Product(int productId, String productName, int categoryId, String categoryName, 
-                   double price, String description, String image, int stock) {
+                   double price, String description, String image, int stockQuantity, int vendorId, String vendorName) {
         this.productId = productId;
         this.productName = productName;
         this.categoryId = categoryId;
@@ -43,109 +47,56 @@ public class Product {
         this.price = price;
         this.description = description;
         this.image = image;
-        this.stock = stock;
-        this.rating = 0.0; // Default rating
-    }
-
-    // Constructor without ID (for new products)
-    public Product(String productName, int categoryId, double price, String description, String image, int stock) {
-        this.productName = productName;
-        this.categoryId = categoryId;
-        this.price = price;
-        this.description = description;
-        this.image = image;
-        this.stock = stock;
-        this.rating = 0.0; // Default rating
+        this.stockQuantity = stockQuantity;
+        this.vendorId = vendorId;
+        this.vendorName = vendorName;
+        this.rating = 0.0;
     }
 
     // Getters and Setters
-    public int getProductId() {
-        return productId;
-    }
+    public int getProductId() { return productId; }
+    public void setProductId(int productId) { this.productId = productId; }
 
-    public void setProductId(int productId) {
-        this.productId = productId;
-    }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
 
-    public String getProductName() {
-        return productName;
-    }
+    public int getCategoryId() { return categoryId; }
+    public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
-    public int getCategoryId() {
-        return categoryId;
-    }
+    public double getPrice() { return price; }
+    public void setPrice(double price) { this.price = price; }
 
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getCategoryName() {
-        return categoryName;
-    }
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
 
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
+    public int getStockQuantity() { return stockQuantity; }
+    public void setStockQuantity(int stockQuantity) { this.stockQuantity = stockQuantity; }
 
-    public double getPrice() {
-        return price;
-    }
+    public boolean isInStock() { return stockQuantity > 0; }
 
-    public void setPrice(double price) {
-        this.price = price;
-    }
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 
-    public String getDescription() {
-        return description;
-    }
+    public int getVendorId() { return vendorId; }
+    public void setVendorId(int vendorId) { this.vendorId = vendorId; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    public void setStock(int stock) {
-        this.stock = stock;
-    }
-
-    public boolean isInStock() {
-        return stock > 0;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
-    }
+    public String getVendorName() { return vendorName; }
+    public void setVendorName(String vendorName) { this.vendorName = vendorName; }
 
     @Override
     public String toString() {
         return "Product{" +
                 "productId=" + productId +
                 ", productName='" + productName + '\'' +
-                ", categoryId=" + categoryId +
-                ", categoryName='" + categoryName + '\'' +
                 ", price=" + price +
-                ", description='" + description + '\'' +
-                ", image='" + image + '\'' +
-                ", stock=" + stock +
+                ", stockQuantity=" + stockQuantity +
+                ", vendorName='" + vendorName + '\'' +
                 '}';
     }
 }

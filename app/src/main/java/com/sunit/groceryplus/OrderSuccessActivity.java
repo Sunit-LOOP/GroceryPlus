@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 
@@ -15,10 +16,20 @@ public class OrderSuccessActivity extends AppCompatActivity {
         navigateToHome();
     };
 
-    @Override
+@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_success);
+        
+        // Handle back press with modern dispatcher
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Go home immediately on back press instead of waiting or exiting
+                handler.removeCallbacks(navigateRunnable);
+                navigateToHome();
+            }
+        });
         
         // Start timer
         handler.postDelayed(navigateRunnable, 3000);
@@ -40,10 +51,5 @@ public class OrderSuccessActivity extends AppCompatActivity {
         handler.removeCallbacks(navigateRunnable);
     }
     
-    @Override
-    public void onBackPressed() {
-        // Go home immediately on back press instead of waiting or exiting
-        handler.removeCallbacks(navigateRunnable);
-        navigateToHome();
-    }
+
 }

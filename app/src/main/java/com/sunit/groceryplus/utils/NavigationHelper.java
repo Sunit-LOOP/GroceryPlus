@@ -3,6 +3,7 @@ package com.sunit.groceryplus.utils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 
@@ -40,27 +41,45 @@ public class NavigationHelper {
         }
 
         if (navProfile != null) {
-            // "Profile" usually maps to UserDetailViewActivity based on UserHomeActivity logic
-            // or UserProfileActivity depending on what the user wants. 
-            // UserHomeActivity maps it to UserDetailViewActivity.
             navProfile.setOnClickListener(v -> navigateTo(activity, UserDetailViewActivity.class, userId));
         }
     }
 
     private static void navigateTo(Activity currentActivity, Class<?> targetActivityClass, int userId) {
+        String TAG = "NavigationHelper";
+        String currentActivityName = currentActivity.getClass().getSimpleName();
+        String targetActivityName = targetActivityClass.getSimpleName();
+        
+        Log.d(TAG, "=== NAVIGATION REQUEST ===");
+        Log.d(TAG, "From: " + currentActivityName);
+        Log.d(TAG, "To: " + targetActivityName);
+        Log.d(TAG, "User ID: " + userId);
+        
         if (currentActivity.getClass().equals(targetActivityClass)) {
-            // Already on the screen, maybe refresh? For now do nothing to avoid loop
+            Log.d(TAG, "Already on target screen (" + targetActivityName + "), skipping navigation");
             return;
         }
 
-        Intent intent = new Intent(currentActivity, targetActivityClass);
-        intent.putExtra("user_id", userId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // Avoid stacking same activities
-        currentActivity.startActivity(intent);
-        if (!(currentActivity instanceof UserHomeActivity)) {
-             // Optional: finish current activity if we want to keep stack clean, 
-             // but keeping Home as base is usually good.
-             // currentActivity.finish(); 
+        if (userId == -1) {
+            Log.e(TAG, "Invalid userId (-1), cannot navigate");
+            android.widget.Toast.makeText(currentActivity, "Session expired. Please login again.", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            Intent intent = new Intent(currentActivity, targetActivityClass);
+            intent.putExtra("user_id", userId);
+            // Use CLEAR_TOP to bring UserHomeActivity to front if it exists, clearing activities above it
+            // SINGLE_TOP prevents creating a new instance if it's already on top
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            
+            Log.d(TAG, "Intent created with user_id: " + userId);
+            Log.d(TAG, "Starting " + targetActivityName + "...");
+            currentActivity.startActivity(intent);
+            Log.d(TAG, "Navigation initiated successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error navigating to " + targetActivityName, e);
+            android.widget.Toast.makeText(currentActivity, "Navigation error", android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 }

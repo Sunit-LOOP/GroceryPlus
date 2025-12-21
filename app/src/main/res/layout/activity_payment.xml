@@ -84,6 +84,7 @@
                         android:layout_marginStart="16dp">
                         
                         <TextView
+                            android:id="@+id/addressTypeTv"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Home"
@@ -92,19 +93,31 @@
                             android:textSize="16sp"/>
 
                         <TextView
+                            android:id="@+id/addressDetailTv"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="123 Kathmandu Street, Nepal"
+                            android:text="Set your address"
                             android:textColor="#666666"
                             android:textSize="14sp"
                             android:layout_marginTop="4dp"/>
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/changeAddressBtn"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@android:drawable/ic_menu_edit"
-                        app:tint="#4CAF50"/>
+                        app:tint="#4CAF50"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:layout_marginEnd="12dp"/>
+
+                    <ImageView
+                        android:id="@+id/pickOnMapBtn"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_dialog_map"
+                        app:tint="#2196F3"
+                        android:background="?attr/selectableItemBackgroundBorderless"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -213,7 +226,54 @@
                 </com.google.android.material.card.MaterialCardView>
             </RadioGroup>
 
-            <!-- Order Summary Section -->
+            <!-- Promo Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Promo Code"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="24dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/promoInputLayout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:boxBackgroundColor="#FFFFFF"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="0dp"
+                    app:boxCornerRadiusBottomEnd="0dp"
+                    android:hint="Enter Promo Code">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/promoCodeEt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapCharacters" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Button
+                    android:id="@+id/applyPromoBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:text="Apply"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:minHeight="56dp"
+                    app:cornerRadius="0dp"
+                    app:backgroundTint="#4CAF50"
+                    android:layout_marginBottom="0dp"/>
+            </LinearLayout>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -276,6 +336,30 @@
                             android:layout_height="wrap_content"
                             android:text="₹50.00"
                             android:textColor="#1A1A1A"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/discountRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Discount"
+                            android:textColor="#F44336"/>
+
+                        <TextView
+                            android:id="@+id/summaryDiscount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-₹0.00"
+                            android:textColor="#F44336"
                             android:textStyle="bold"/>
                     </LinearLayout>
                    

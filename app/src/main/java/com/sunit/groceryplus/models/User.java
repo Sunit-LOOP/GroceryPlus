@@ -1,4 +1,4 @@
-package com.sunit.groceryplus;
+package com.sunit.groceryplus.models;
 
 public class User {
     private int userId;

@@ -10,7 +10,10 @@ import android.util.Log;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.sunit.groceryplus.models.User;
 import static com.sunit.groceryplus.DatabaseContract.CartItemEntry;
 import static com.sunit.groceryplus.DatabaseContract.CategoryEntry;
 import static com.sunit.groceryplus.DatabaseContract.OrderEntry;
@@ -25,7 +28,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Info
     private static final String DATABASE_NAME = "GroceryPlus.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 4;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -47,6 +50,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_CREATE_DELIVERY_PERSONNEL_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_PAYMENTS_TABLE);
         db.execSQL(DatabaseContract.SQL_CREATE_NOTIFICATIONS_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_ADDRESSES_TABLE);
+        db.execSQL(DatabaseContract.SQL_CREATE_VENDORS_TABLE);
 
         // Insert default admin user
         insertDefaultAdmin(db);
@@ -68,6 +73,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(DatabaseContract.SQL_DELETE_DELIVERY_PERSONNEL_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_PAYMENTS_TABLE);
         db.execSQL(DatabaseContract.SQL_DELETE_NOTIFICATIONS_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_ADDRESSES_TABLE);
+        db.execSQL(DatabaseContract.SQL_DELETE_VENDORS_TABLE);
 
         onCreate(db);
     }
@@ -143,8 +150,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error adding user", e);
             return -1;
-        } finally {
-            db.close();
         }
     }
     
@@ -154,6 +159,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public User authenticateUser(String email, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
         
+        Log.d(TAG, "Authenticating user with email: " + email);
         String selectQuery = "SELECT * FROM " + DatabaseContract.UserEntry.TABLE_NAME + " WHERE " + DatabaseContract.UserEntry.COLUMN_NAME_USER_EMAIL + " = ?";
         
         Cursor cursor = db.rawQuery(selectQuery, new String[]{email});
@@ -172,6 +178,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String storedSalt = cursor.getString(saltIndex);
                     String storedPassword = cursor.getString(passwordIndex);
                     String hashedInputPassword = hashPassword(password, storedSalt);
+                    Log.d(TAG, "Comparing passwords - input: " + hashedInputPassword + ", stored: " + storedPassword);
                     
                     if (hashedInputPassword.equals(storedPassword)) {
                         // Password matches
@@ -182,7 +189,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         String userType = (userTypeIndex >= 0) ? cursor.getString(userTypeIndex) : "";
                         
                         User user = new User(userId, userName, userEmail, userPhone, userType);
+                        Log.d(TAG, "Authentication successful for user: " + userName + " (" + userType + ")");
                         return user;
+                    } else {
+                        Log.d(TAG, "Password mismatch");
                     }
                 }
             } catch (Exception e) {
@@ -193,9 +203,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         } else if (cursor != null) {
+            Log.d(TAG, "No user found with email: " + email);
             cursor.close();
+        } else {
+            Log.d(TAG, "Cursor is null for email: " + email);
         }
         
+        Log.d(TAG, "Authentication failed for email: " + email);
         return null; // Authentication failed
     }
     
@@ -299,8 +313,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error updating user", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -310,11 +322,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean isUserExists(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         
+        Log.d(TAG, "Checking if user exists with email: " + email);
         String selectQuery = "SELECT * FROM " + DatabaseContract.UserEntry.TABLE_NAME + " WHERE " + DatabaseContract.UserEntry.COLUMN_NAME_USER_EMAIL + " = ?";
         
         Cursor cursor = db.rawQuery(selectQuery, new String[]{email});
         
         boolean exists = (cursor != null && cursor.getCount() > 0);
+        Log.d(TAG, "User exists: " + exists);
         
         if (cursor != null) {
             cursor.close();
@@ -365,14 +379,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(DatabaseContract.CategoryEntry.COLUMN_NAME_CATEGORY_DESCRIPTION, categoryDescription);
         
         long categoryId = db.insert(DatabaseContract.CategoryEntry.TABLE_NAME, null, values);
-        db.close();
         return categoryId;
     }
     
     /**
      * Add a new product
      */
-    public long addProduct(String productName, int categoryId, double price, String description, String image) {
+    public long addProduct(String productName, int categoryId, double price, String description, String image, int stockQuantity, int vendorId) {
         SQLiteDatabase db = this.getWritableDatabase();
         
         ContentValues values = new ContentValues();
@@ -381,9 +394,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_PRICE, price);
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_DESCRIPTION, description);
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_IMAGE, image);
+        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_STOCK, stockQuantity);
+        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_VENDOR_ID, vendorId);
         
         long productId = db.insert(DatabaseContract.ProductEntry.TABLE_NAME, null, values);
-        db.close();
         return productId;
     }
     
@@ -394,6 +408,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         
         try {
+            // First check if item already exists
+            int existingQty = getProductQuantityInCart(userId, productId);
+            if (existingQty > 0) {
+                return updateCartQuantity(userId, productId, existingQty + quantity) ? 1 : -1;
+            }
+
             ContentValues values = new ContentValues();
             values.put(CartItemEntry.COLUMN_NAME_USER_ID, userId);
             values.put(CartItemEntry.COLUMN_NAME_PRODUCT_ID, productId);
@@ -405,9 +425,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error adding to cart", e);
             return -1;
-        } finally {
-            db.close();
         }
+    }
+
+    /**
+     * Get specific product quantity in cart
+     */
+    public int getProductQuantityInCart(int userId, int productId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT " + CartItemEntry.COLUMN_NAME_QUANTITY + " FROM " + CartItemEntry.TABLE_NAME +
+                       " WHERE " + CartItemEntry.COLUMN_NAME_USER_ID + " = ? AND " + CartItemEntry.COLUMN_NAME_PRODUCT_ID + " = ?";
+        
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(userId), String.valueOf(productId)});
+        int quantity = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            quantity = cursor.getInt(0);
+            cursor.close();
+        }
+        return quantity;
+    }
+
+    /**
+     * Update cart quantity for a specific product
+     */
+    public boolean updateCartQuantity(int userId, int productId, int quantity) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(CartItemEntry.COLUMN_NAME_QUANTITY, quantity);
+        
+        int rows = db.update(CartItemEntry.TABLE_NAME, values, 
+                CartItemEntry.COLUMN_NAME_USER_ID + " = ? AND " + CartItemEntry.COLUMN_NAME_PRODUCT_ID + " = ?",
+                new String[]{String.valueOf(userId), String.valueOf(productId)});
+        return rows > 0;
     }
     
     /**
@@ -430,8 +479,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         
         int result = db.delete(CartItemEntry.TABLE_NAME, CartItemEntry.COLUMN_NAME_CART_ID + " = ?", 
                               new String[]{String.valueOf(cartId)});
-        db.close();
         return result;
+    }
+
+    /**
+     * Remove specific product from cart for user
+     */
+    public boolean removeFromCart(int userId, int productId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int result = db.delete(CartItemEntry.TABLE_NAME, 
+                CartItemEntry.COLUMN_NAME_USER_ID + " = ? AND " + CartItemEntry.COLUMN_NAME_PRODUCT_ID + " = ?",
+                new String[]{String.valueOf(userId), String.valueOf(productId)});
+        return result > 0;
     }
     
     /**
@@ -442,14 +501,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         
         int result = db.delete(CartItemEntry.TABLE_NAME, CartItemEntry.COLUMN_NAME_USER_ID + " = ?", 
                               new String[]{String.valueOf(userId)});
-        db.close();
         return result;
     }
     
     /**
      * Create a new order
      */
-    public long createOrder(int userId, double totalAmount, String status) {
+    public long createOrder(int userId, double totalAmount, String status, int addressId) {
         SQLiteDatabase db = this.getWritableDatabase();
         
         try {
@@ -457,6 +515,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(OrderEntry.COLUMN_NAME_USER_ID, userId);
             values.put(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT, totalAmount);
             values.put(OrderEntry.COLUMN_NAME_STATUS, status);
+            values.put(OrderEntry.COLUMN_NAME_ADDRESS_ID, addressId);
             
             // Inserting Row
             long orderId = db.insert(OrderEntry.TABLE_NAME, null, values);
@@ -464,8 +523,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error creating order", e);
             return -1;
-        } finally {
-            db.close();
         }
     }
     
@@ -488,8 +545,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error adding order item", e);
             return -1;
-        } finally {
-            db.close();
         }
     }
 
@@ -503,9 +558,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String query = "SELECT p.*, c." + CategoryEntry.COLUMN_NAME_CATEGORY_NAME + 
+                      ", v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME +
+                      ", (SELECT AVG(" + DatabaseContract.ReviewEntry.COLUMN_NAME_RATING + ") FROM " + DatabaseContract.ReviewEntry.TABLE_NAME + 
+                      " WHERE " + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = p." + ProductEntry.COLUMN_NAME_PRODUCT_ID + ") as avg_rating" +
                       " FROM " + ProductEntry.TABLE_NAME + " p " +
                       " LEFT JOIN " + CategoryEntry.TABLE_NAME + " c " +
-                      " ON p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = c." + CategoryEntry.COLUMN_NAME_CATEGORY_ID;
+                      " ON p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = c." + CategoryEntry.COLUMN_NAME_CATEGORY_ID +
+                      " LEFT JOIN " + DatabaseContract.VendorEntry.TABLE_NAME + " v " +
+                      " ON p." + ProductEntry.COLUMN_NAME_VENDOR_ID + " = v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID;
         
         Cursor cursor = db.rawQuery(query, null);
         
@@ -519,9 +579,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     double price = cursor.getDouble(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRICE));
                     String description = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_DESCRIPTION));
                     String image = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_IMAGE));
+                    int stock = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_STOCK));
+                    double avgRating = cursor.getDouble(cursor.getColumnIndexOrThrow("avg_rating"));
+                    int vendorId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_VENDOR_ID));
+                    String vendorName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
                     
                     com.sunit.groceryplus.models.Product product = new com.sunit.groceryplus.models.Product(
-                        productId, productName, categoryId, categoryName, price, description, image, 100
+                        productId, productName, categoryId, categoryName, price, description, image, avgRating, stock, vendorId, vendorName != null ? vendorName : "General Store"
                     );
                     products.add(product);
                 } catch (Exception e) {
@@ -541,29 +605,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String query = "SELECT p.*, c." + CategoryEntry.COLUMN_NAME_CATEGORY_NAME + 
+                      ", v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME +
+                      ", (SELECT AVG(" + DatabaseContract.ReviewEntry.COLUMN_NAME_RATING + ") FROM " + DatabaseContract.ReviewEntry.TABLE_NAME + 
+                      " WHERE " + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = p." + ProductEntry.COLUMN_NAME_PRODUCT_ID + ") as avg_rating" +
                       " FROM " + ProductEntry.TABLE_NAME + " p " +
                       " LEFT JOIN " + CategoryEntry.TABLE_NAME + " c " +
                       " ON p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = c." + CategoryEntry.COLUMN_NAME_CATEGORY_ID +
+                      " LEFT JOIN " + DatabaseContract.VendorEntry.TABLE_NAME + " v " +
+                      " ON p." + ProductEntry.COLUMN_NAME_VENDOR_ID + " = v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID +
                       " WHERE p." + ProductEntry.COLUMN_NAME_PRODUCT_ID + " = ?";
         
         Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(productId)});
         
         if (cursor != null && cursor.moveToFirst()) {
             try {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRODUCT_ID));
                 String productName = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRODUCT_NAME));
                 int categoryId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_CATEGORY_ID));
                 String categoryName = cursor.getString(cursor.getColumnIndexOrThrow(CategoryEntry.COLUMN_NAME_CATEGORY_NAME));
                 double price = cursor.getDouble(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRICE));
                 String description = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_DESCRIPTION));
                 String image = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_IMAGE));
+                int stock = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_STOCK));
+                double avgRating = cursor.getDouble(cursor.getColumnIndexOrThrow("avg_rating"));
+                int vendorId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_VENDOR_ID));
+                String vendorName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
                 
-                cursor.close();
                 return new com.sunit.groceryplus.models.Product(
-                    id, productName, categoryId, categoryName, price, description, image, 100
+                    productId, productName, categoryId, categoryName, price, description, image, avgRating, stock, vendorId, vendorName != null ? vendorName : "General Store"
                 );
             } catch (Exception e) {
                 Log.e(TAG, "Error getting product by ID", e);
+            } finally {
                 cursor.close();
             }
         } else if (cursor != null) {
@@ -581,9 +653,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String query = "SELECT p.*, c." + CategoryEntry.COLUMN_NAME_CATEGORY_NAME + 
+                      ", v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME +
+                      ", (SELECT AVG(" + DatabaseContract.ReviewEntry.COLUMN_NAME_RATING + ") FROM " + DatabaseContract.ReviewEntry.TABLE_NAME + 
+                      " WHERE " + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = p." + ProductEntry.COLUMN_NAME_PRODUCT_ID + ") as avg_rating" +
                       " FROM " + ProductEntry.TABLE_NAME + " p " +
                       " LEFT JOIN " + CategoryEntry.TABLE_NAME + " c " +
                       " ON p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = c." + CategoryEntry.COLUMN_NAME_CATEGORY_ID +
+                      " LEFT JOIN " + DatabaseContract.VendorEntry.TABLE_NAME + " v " +
+                      " ON p." + ProductEntry.COLUMN_NAME_VENDOR_ID + " = v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID +
                       " WHERE p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = ?";
         
         Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(categoryId)});
@@ -598,9 +675,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     double price = cursor.getDouble(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRICE));
                     String description = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_DESCRIPTION));
                     String image = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_IMAGE));
+                    int stock = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_STOCK));
+                    double avgRating = cursor.getDouble(cursor.getColumnIndexOrThrow("avg_rating"));
+                    int vendorId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_VENDOR_ID));
+                    String vendorName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
                     
                     com.sunit.groceryplus.models.Product product = new com.sunit.groceryplus.models.Product(
-                        productId, productName, catId, categoryName, price, description, image, 100
+                        productId, productName, catId, categoryName, price, description, image, avgRating, stock, vendorId, vendorName != null ? vendorName : "General Store"
                     );
                     products.add(product);
                 } catch (Exception e) {
@@ -621,9 +702,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         String searchQuery = "SELECT p.*, c." + CategoryEntry.COLUMN_NAME_CATEGORY_NAME + 
+                            ", v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME +
                             " FROM " + ProductEntry.TABLE_NAME + " p " +
                             " LEFT JOIN " + CategoryEntry.TABLE_NAME + " c " +
                             " ON p." + ProductEntry.COLUMN_NAME_CATEGORY_ID + " = c." + CategoryEntry.COLUMN_NAME_CATEGORY_ID +
+                            " LEFT JOIN " + DatabaseContract.VendorEntry.TABLE_NAME + " v " +
+                            " ON p." + ProductEntry.COLUMN_NAME_VENDOR_ID + " = v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID +
                             " WHERE p." + ProductEntry.COLUMN_NAME_PRODUCT_NAME + " LIKE ?";
         
         Cursor cursor = db.rawQuery(searchQuery, new String[]{"%" + query + "%"});
@@ -638,9 +722,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     double price = cursor.getDouble(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRICE));
                     String description = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_DESCRIPTION));
                     String image = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_IMAGE));
+                    int stock = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_STOCK));
+                    int vendorId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_VENDOR_ID));
+                    String vendorName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
                     
                     com.sunit.groceryplus.models.Product product = new com.sunit.groceryplus.models.Product(
-                        productId, productName, categoryId, categoryName, price, description, image, 100
+                        productId, productName, categoryId, categoryName, price, description, image, stock, vendorId, vendorName != null ? vendorName : "General Store"
                     );
                     products.add(product);
                 } catch (Exception e) {
@@ -656,7 +743,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     /**
      * Update product
      */
-    public boolean updateProduct(int productId, String productName, int categoryId, double price, String description, String image) {
+    public boolean updateProduct(int productId, String productName, int categoryId, double price, String description, String image, int stockQuantity, int vendorId) {
         SQLiteDatabase db = this.getWritableDatabase();
         
         try {
@@ -666,6 +753,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(ProductEntry.COLUMN_NAME_PRICE, price);
             values.put(ProductEntry.COLUMN_NAME_DESCRIPTION, description);
             values.put(ProductEntry.COLUMN_NAME_IMAGE, image);
+            values.put(ProductEntry.COLUMN_NAME_STOCK, stockQuantity);
+            values.put(ProductEntry.COLUMN_NAME_VENDOR_ID, vendorId);
             
             int result = db.update(ProductEntry.TABLE_NAME, values, 
                                   ProductEntry.COLUMN_NAME_PRODUCT_ID + " = ?", 
@@ -674,8 +763,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error updating product", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -693,8 +780,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error deleting product", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -779,8 +864,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error updating category", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -798,8 +881,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error deleting category", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -861,8 +942,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error updating cart quantity", e);
             return false;
-        } finally {
-            db.close();
         }
     }
     
@@ -1067,8 +1146,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error updating order status", e);
             return false;
-        } finally {
-            db.close();
         }
     }
 
@@ -1101,6 +1178,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     return;
                 }
             }
+            Log.d(TAG, "Starting sample data insertion");
+            
+            // Insert default admin user if not exists
+            Log.d(TAG, "Checking if admin user exists");
+            if (!isUserExists("admin@gmail.com")) {
+                Log.d(TAG, "Creating default admin user");
+                long adminId = addUser("Admin User", "admin@gmail.com", "9876543210", "admin123", "admin");
+                if (adminId != -1) {
+                    Log.d(TAG, "Default admin user created with ID: " + adminId);
+                } else {
+                    Log.e(TAG, "Failed to create default admin user");
+                }
+            } else {
+                Log.d(TAG, "Admin user already exists");
+            }
             
             // Insert categories
             long fruitsId = addCategory("Fruits", "Fresh fruits");
@@ -1109,37 +1201,73 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             long bakeryId = addCategory("Bakery", "Bread and baked goods");
             long meatId = addCategory("Meat", "Fresh meat and poultry");
             
-            // Insert products
-            addProduct("Apple", (int)fruitsId, 120.0, "Fresh red apples", "apple", "1kg");
-            addProduct("Banana", (int)fruitsId, 60.0, "Fresh bananas", "banana", "1 dozen");
-            addProduct("Orange", (int)fruitsId, 100.0, "Fresh oranges", "orange", "1kg");
-            addProduct("Mango", (int)fruitsId, 150.0, "Sweet mangoes", "mango", "1kg");
+            // Insert products linked to vendors
+addProduct("Apple", (int)fruitsId, 120.0, "Fresh red apples", "apple", 200, 1);
+            addProduct("Banana", (int)fruitsId, 60.0, "Fresh bananas", "banana", 150, 1);
+            addProduct("Orange", (int)fruitsId, 100.0, "Fresh oranges", "orange", 180, 2);
+            addProduct("Mango", (int)fruitsId, 150.0, "Sweet mangoes", "mango", 120, 2);
             
-            addProduct("Tomato", (int)vegetablesId, 40.0, "Fresh tomatoes", "tomato", "1kg");
-            addProduct("Potato", (int)vegetablesId, 30.0, "Fresh potatoes", "potato", "1kg");
-            addProduct("Onion", (int)vegetablesId, 35.0, "Fresh onions", "onion", "1kg");
-            addProduct("Carrot", (int)vegetablesId, 50.0, "Fresh carrots", "carrot", "1kg");
+            addProduct("Tomato", (int)vegetablesId, 40.0, "Fresh tomatoes", "tomato", 200, 3);
+            addProduct("Potato", (int)vegetablesId, 30.0, "Fresh potatoes", "potato", 250, 3);
+            addProduct("Onion", (int)vegetablesId, 35.0, "Fresh onions", "onion", 220, 4);
+            addProduct("Carrot", (int)vegetablesId, 50.0, "Fresh carrots", "carrot", 180, 4);
             
-            addProduct("Milk", (int)dairyId, 70.0, "Fresh milk", "milk", "1 liter");
-            addProduct("Cheese", (int)dairyId, 200.0, "Cheddar cheese", "cheese", "250g");
-            addProduct("Yogurt", (int)dairyId, 80.0, "Plain yogurt", "yogurt", "500g");
+            addProduct("Milk", (int)dairyId, 70.0, "Fresh milk", "milk", 100, 5);
+            addProduct("Cheese", (int)dairyId, 200.0, "Cheddar cheese", "cheese", 80, 5);
+            addProduct("Yogurt", (int)dairyId, 80.0, "Plain yogurt", "yogurt", 90, 1);
             
-            addProduct("Bread", (int)bakeryId, 45.0, "White bread", "bread", "1 loaf");
-            addProduct("Croissant", (int)bakeryId, 100.0, "Butter croissant", "croissant", "6 pieces");
+            addProduct("Bread", (int)bakeryId, 45.0, "White bread", "bread", 60, 2);
+            addProduct("Croissant", (int)bakeryId, 100.0, "Butter croissant", "croissant", 50, 2);
             
-            addProduct("Chicken", (int)meatId, 350.0, "Fresh chicken", "chicken", "1kg");
-            addProduct("Mutton", (int)meatId, 800.0, "Fresh mutton", "mutton", "1kg");
+            addProduct("Chicken", (int)meatId, 350.0, "Fresh chicken", "chicken", 75, 3);
+            addProduct("Mutton", (int)meatId, 800.0, "Fresh mutton", "mutton", 40, 4);
+            
+            // No default customer user creation - users must register manually
             
             Log.d(TAG, "Sample data inserted successfully");
+            insertSampleVendors();
         } catch (Exception e) {
             Log.e(TAG, "Error inserting sample data", e);
+        }
+    }
+
+    /**
+     * Ensure all products have stock quantities
+     * Updates products with 0 or null stock to have default stock of 100
+     */
+    public void ensureAllProductsHaveStock() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        
+        try {
+            // Update products with 0 or null stock to have default stock of 100
+            ContentValues values = new ContentValues();
+            values.put(ProductEntry.COLUMN_NAME_STOCK, 100);
+            
+            int updated = db.update(ProductEntry.TABLE_NAME, values, 
+                    ProductEntry.COLUMN_NAME_STOCK + " <= 0 OR " + ProductEntry.COLUMN_NAME_STOCK + " IS NULL", 
+                    null);
+            
+            if (updated > 0) {
+                Log.d(TAG, "Updated " + updated + " products with default stock quantity of 100");
+            } else {
+                Log.d(TAG, "All products already have stock quantities");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error ensuring products have stock", e);
+        }
+    }
+
+    private void insertSampleVendors() {
+        if (getAllVendors().isEmpty()) {
+            addVendor("Fresh Mart KTM", "Durbar Marg, Kathmandu", 27.7120, 85.3210, "vendor_icon", 4.5);
+            addVendor("KTM Food Store", "Lazimpat, Kathmandu", 27.7250, 85.3200, "vendor_icon", 4.3);
         }
     }
     
     /**
      * Add product with stock
      */
-    public long addProduct(String productName, int categoryId, double price, String description, String image, String unit) {
+public long addProduct(String productName, int categoryId, double price, String description, String image, String unit, int vendorId) {
         SQLiteDatabase db = this.getWritableDatabase();
         
         ContentValues values = new ContentValues();
@@ -1148,9 +1276,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_PRICE, price);
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_DESCRIPTION, description);
         values.put(DatabaseContract.ProductEntry.COLUMN_NAME_IMAGE, image);
+        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_VENDOR_ID, vendorId);
+        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_STOCK, 100); // Default stock quantity
         
         long productId = db.insert(DatabaseContract.ProductEntry.TABLE_NAME, null, values);
-        db.close();
         return productId;
     }
     // Analytics Methods
@@ -1223,7 +1352,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_CODE, code);
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE, discount);
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL, validUntil);
+        values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE, 1);
         return db.insert(DatabaseContract.PromotionEntry.TABLE_NAME, null, values);
+    }
+
+    public com.sunit.groceryplus.models.Promotion getPromotionByCode(String code) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(DatabaseContract.PromotionEntry.TABLE_NAME, null,
+                DatabaseContract.PromotionEntry.COLUMN_NAME_CODE + " = ? AND " +
+                DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE + " = 1",
+                new String[]{code}, null, null, null);
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_PROMO_ID));
+            double discount = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE));
+            String validUntil = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL));
+            boolean isActive = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE)) == 1;
+            cursor.close();
+            return new com.sunit.groceryplus.models.Promotion(id, code, discount, validUntil, isActive);
+        }
+        if (cursor != null) cursor.close();
+        return null;
     }
     
     public Cursor getAllPromotions() {
@@ -1299,8 +1448,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error adding payment", e);
             return -1;
-        } finally {
-            db.close();
         }
     }
     
@@ -1358,6 +1505,79 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return adminId;
     }
 
+    /**
+     * Add a product review
+     */
+    public long addReview(int userId, int productId, float rating, String comment) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(DatabaseContract.ReviewEntry.COLUMN_NAME_USER_ID, userId);
+            values.put(DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID, productId);
+            values.put(DatabaseContract.ReviewEntry.COLUMN_NAME_RATING, (int) rating);
+            values.put(DatabaseContract.ReviewEntry.COLUMN_NAME_COMMENT, comment);
+            return db.insert(DatabaseContract.ReviewEntry.TABLE_NAME, null, values);
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding review", e);
+            return -1;
+        }
+    }
+
+    /**
+     * Get reviews for a specific product
+     */
+    public java.util.List<com.sunit.groceryplus.models.Review> getReviewsForProduct(int productId) {
+        java.util.List<com.sunit.groceryplus.models.Review> reviews = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String query = "SELECT r.*, u." + DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME + 
+                      ", p." + DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_NAME +
+                      " FROM " + DatabaseContract.ReviewEntry.TABLE_NAME + " r " +
+                      " JOIN " + DatabaseContract.UserEntry.TABLE_NAME + " u ON r." + DatabaseContract.ReviewEntry.COLUMN_NAME_USER_ID + " = u." + DatabaseContract.UserEntry.COLUMN_NAME_USER_ID +
+                      " JOIN " + DatabaseContract.ProductEntry.TABLE_NAME + " p ON r." + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = p." + DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_ID +
+                      " WHERE r." + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = ?" +
+                      " ORDER BY r." + DatabaseContract.ReviewEntry.COLUMN_NAME_CREATED_AT + " DESC";
+        
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(productId)});
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                try {
+                    int reviewId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.ReviewEntry.COLUMN_NAME_REVIEW_ID));
+                    int userId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.ReviewEntry.COLUMN_NAME_USER_ID));
+                    String userName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.UserEntry.COLUMN_NAME_USER_NAME));
+                    String productName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_NAME));
+                    int rating = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.ReviewEntry.COLUMN_NAME_RATING));
+                    String comment = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ReviewEntry.COLUMN_NAME_COMMENT));
+                    String createdAt = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ReviewEntry.COLUMN_NAME_CREATED_AT));
+                    
+                    reviews.add(new com.sunit.groceryplus.models.Review(reviewId, userId, userName, productId, productName, rating, comment, createdAt));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing review", e);
+                }
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return reviews;
+    }
+
+    /**
+     * Get average rating for a product
+     */
+    public float getAverageRatingForProduct(int productId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT AVG(" + DatabaseContract.ReviewEntry.COLUMN_NAME_RATING + ") FROM " + DatabaseContract.ReviewEntry.TABLE_NAME +
+                      " WHERE " + DatabaseContract.ReviewEntry.COLUMN_NAME_PRODUCT_ID + " = ?";
+        
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(productId)});
+        float avgRating = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            avgRating = cursor.getFloat(0);
+            cursor.close();
+        }
+        return avgRating;
+    }
+
     // ==================== NOTIFICATION METHODS ====================
 
     public long addNotification(int userId, String title, String message) {
@@ -1371,8 +1591,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, "Error adding notification", e);
             return -1;
-        } finally {
-            db.close();
         }
     }
 
@@ -1382,5 +1600,275 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " WHERE " + DatabaseContract.NotificationEntry.COLUMN_NAME_USER_ID + " = ?" +
                 " ORDER BY " + DatabaseContract.NotificationEntry.COLUMN_NAME_CREATED_AT + " DESC";
         return db.rawQuery(query, new String[]{String.valueOf(userId)});
+    }
+
+    public com.sunit.groceryplus.models.Order getOrderById(int orderId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT o.*, u." + UserEntry.COLUMN_NAME_USER_NAME + 
+                      " FROM " + OrderEntry.TABLE_NAME + " o " +
+                      " JOIN " + UserEntry.TABLE_NAME + " u ON o." + OrderEntry.COLUMN_NAME_USER_ID + " = u." + UserEntry.COLUMN_NAME_USER_ID +
+                      " WHERE o." + OrderEntry.COLUMN_NAME_ORDER_ID + " = ?";
+        
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(orderId)});
+        if (cursor != null && cursor.moveToFirst()) {
+            int userId = cursor.getInt(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_USER_ID));
+            String userName = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_NAME));
+            double amount = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT));
+            String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
+            String date = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
+            int addressId = cursor.getInt(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ADDRESS_ID));
+            cursor.close();
+            return new com.sunit.groceryplus.models.Order(orderId, userId, userName, amount, status, date, addressId);
+        }
+        return null;
+    }
+
+    public com.sunit.groceryplus.models.Address getAddressById(int addressId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(DatabaseContract.AddressEntry.TABLE_NAME, null, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_ADDRESS_ID + " = ?", 
+                new String[]{String.valueOf(addressId)}, null, null, null);
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            int userId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_USER_ID));
+            String type = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_TYPE));
+            String full = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_FULL_ADDRESS));
+            String landmark = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LANDMARK));
+            String city = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_CITY));
+            String area = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_AREA));
+            double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LATITUDE));
+            double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LONGITUDE));
+            boolean isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT)) == 1;
+            cursor.close();
+            return new com.sunit.groceryplus.models.Address(addressId, userId, type, full, landmark, city, area, latitude, longitude, isDefault);
+        }
+        return null;
+    }
+
+    // ==================== QUICK COMMERCE METHODS ====================
+
+    /**
+     * Decrement product stock when order is placed
+     */
+    public boolean decrementStock(int productId, int quantity) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + ProductEntry.TABLE_NAME + 
+                       " SET " + ProductEntry.COLUMN_NAME_STOCK + " = " + ProductEntry.COLUMN_NAME_STOCK + " - " + quantity +
+                       " WHERE " + ProductEntry.COLUMN_NAME_PRODUCT_ID + " = ? AND " + ProductEntry.COLUMN_NAME_STOCK + " >= ?";
+        
+        db.execSQL(query, new Object[]{productId, quantity});
+        return true; // Simplified for now
+    }
+
+    /**
+     * Add a new saved address
+     */
+    public long addAddress(int userId, String type, String fullAddress, String landmark, String city, String area, double latitude, double longitude, boolean isDefault) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_USER_ID, userId);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_TYPE, type);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_FULL_ADDRESS, fullAddress);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LANDMARK, landmark);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_CITY, city);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_AREA, area);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LATITUDE, latitude);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LONGITUDE, longitude);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT, isDefault ? 1 : 0);
+        
+        return db.insert(DatabaseContract.AddressEntry.TABLE_NAME, null, values);
+    }
+
+    /**
+     * Get all saved addresses for a user
+     */
+    public java.util.List<com.sunit.groceryplus.models.Address> getUserAddresses(int userId) {
+        java.util.List<com.sunit.groceryplus.models.Address> addresses = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        Cursor cursor = db.query(DatabaseContract.AddressEntry.TABLE_NAME, null, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_USER_ID + " = ?", 
+                new String[]{String.valueOf(userId)}, null, null, null);
+        
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                try {
+                    int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_ADDRESS_ID));
+                    String type = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_TYPE));
+                    String full = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_FULL_ADDRESS));
+                    String landmark = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LANDMARK));
+                    String city = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_CITY));
+                    String area = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_AREA));
+                    double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LATITUDE));
+                    double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_LONGITUDE));
+                    boolean isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT)) == 1;
+                    
+                    addresses.add(new com.sunit.groceryplus.models.Address(id, userId, type, full, landmark, city, area, latitude, longitude, isDefault));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing address", e);
+                }
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return addresses;
+    }
+
+    public boolean deleteAddress(int addressId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(DatabaseContract.AddressEntry.TABLE_NAME, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_ADDRESS_ID + " = ?", 
+                new String[]{String.valueOf(addressId)}) > 0;
+    }
+
+    public boolean setDefaultAddress(int userId, int addressId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        // Reset all to 0
+        ContentValues valuesReset = new ContentValues();
+        valuesReset.put(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT, 0);
+        db.update(DatabaseContract.AddressEntry.TABLE_NAME, valuesReset, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_USER_ID + " = ?", 
+                new String[]{String.valueOf(userId)});
+        
+        // Set selected to 1
+        ContentValues valuesSet = new ContentValues();
+        valuesSet.put(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT, 1);
+        return db.update(DatabaseContract.AddressEntry.TABLE_NAME, valuesSet, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_ADDRESS_ID + " = ?", 
+                new String[]{String.valueOf(addressId)}) > 0;
+    }
+
+    public boolean updateAddress(int addressId, String type, String fullAddress, String landmark, String city, String area, double latitude, double longitude, boolean isDefault) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_TYPE, type);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_FULL_ADDRESS, fullAddress);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LANDMARK, landmark);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_CITY, city);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_AREA, area);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LATITUDE, latitude);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_LONGITUDE, longitude);
+        values.put(DatabaseContract.AddressEntry.COLUMN_NAME_IS_DEFAULT, isDefault ? 1 : 0);
+        
+        return db.update(DatabaseContract.AddressEntry.TABLE_NAME, values, 
+                DatabaseContract.AddressEntry.COLUMN_NAME_ADDRESS_ID + " = ?", 
+                new String[]{String.valueOf(addressId)}) > 0;
+    }
+    // ==================== VENDOR METHODS ====================
+
+    public long addVendor(String name, String address, double lat, double lng, String icon, double rating) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME, name);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_ADDRESS, address);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_LATITUDE, lat);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_LONGITUDE, lng);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_ICON, icon);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_RATING, rating);
+        return db.insert(DatabaseContract.VendorEntry.TABLE_NAME, null, values);
+    }
+
+    public List<com.sunit.groceryplus.models.Vendor> getAllVendors() {
+        List<com.sunit.groceryplus.models.Vendor> vendors = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(DatabaseContract.VendorEntry.TABLE_NAME, null, null, null, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
+                String address = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_ADDRESS));
+                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_LATITUDE));
+                double lng = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_LONGITUDE));
+                String icon = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_ICON));
+                double rating = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_RATING));
+
+                vendors.add(new com.sunit.groceryplus.models.Vendor(id, name, address, lat, lng, icon, rating));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return vendors;
+    }
+
+    public com.sunit.groceryplus.models.Vendor getVendorById(int vendorId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(DatabaseContract.VendorEntry.TABLE_NAME, null,
+                DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID + " = ?",
+                new String[]{String.valueOf(vendorId)}, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
+            String address = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_ADDRESS));
+            double lat = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_LATITUDE));
+            double lng = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_LONGITUDE));
+            String icon = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_ICON));
+            double rating = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_RATING));
+            cursor.close();
+            return new com.sunit.groceryplus.models.Vendor(id, name, address, lat, lng, icon, rating);
+        }
+        if (cursor != null) cursor.close();
+        return null;
+    }
+    public boolean updateVendor(int vendorId, String name, String address, double lat, double lng, String icon, double rating) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME, name);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_ADDRESS, address);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_LATITUDE, lat);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_LONGITUDE, lng);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_ICON, icon);
+        values.put(DatabaseContract.VendorEntry.COLUMN_NAME_RATING, rating);
+        return db.update(DatabaseContract.VendorEntry.TABLE_NAME, values, 
+                DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID + " = ?", 
+                new String[]{String.valueOf(vendorId)}) > 0;
+    }
+
+    public boolean deleteVendor(int vendorId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(DatabaseContract.VendorEntry.TABLE_NAME, 
+                DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID + " = ?", 
+                new String[]{String.valueOf(vendorId)}) > 0;
+    }
+
+    /**
+     * Data Migration: Ensure all products have a valid vendor.
+     * If no vendor exists, creates a default one.
+     */
+    public void checkAndAssignDefaultVendor() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            // 1. Check if any vendor exists
+            int vendorId = -1;
+            Cursor cursor = db.query(DatabaseContract.VendorEntry.TABLE_NAME, 
+                    new String[]{DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID}, 
+                    null, null, null, null, null, "1");
+            
+            if (cursor != null && cursor.moveToFirst()) {
+                vendorId = cursor.getInt(0);
+                cursor.close();
+            } else {
+                // 2. Create default vendor if none exists
+                ContentValues vValues = new ContentValues();
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME, "General Store");
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_ADDRESS, "City Center");
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_LATITUDE, 27.7172);
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_LONGITUDE, 85.3240);
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_ICON, "ic_vendor");
+                vValues.put(DatabaseContract.VendorEntry.COLUMN_NAME_RATING, 4.5);
+                vendorId = (int) db.insert(DatabaseContract.VendorEntry.TABLE_NAME, null, vValues);
+                if (cursor != null) cursor.close();
+            }
+
+            // 3. Update products with missing vendor (0 or null)
+            ContentValues pValues = new ContentValues();
+            pValues.put(ProductEntry.COLUMN_NAME_VENDOR_ID, vendorId);
+            db.update(ProductEntry.TABLE_NAME, pValues, 
+                    ProductEntry.COLUMN_NAME_VENDOR_ID + " <= 0 OR " + ProductEntry.COLUMN_NAME_VENDOR_ID + " IS NULL", 
+                    null);
+            
+            Log.d(TAG, "Data Migration: All products assigned to vendor ID " + vendorId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error during vendor migration", e);
+        }
     }
 }

@@ -16,12 +16,9 @@ public class ProductRepository {
         this.dbHelper = new DatabaseHelper(context);
     }
 
-    /**
-     * Add a new product
-     */
-    public boolean addProduct(String productName, int categoryId, double price, String description, String image) {
+    public boolean addProduct(String productName, int categoryId, double price, String description, String image, int stockQuantity, int vendorId) {
         try {
-            long result = dbHelper.addProduct(productName, categoryId, price, description, image);
+            long result = dbHelper.addProduct(productName, categoryId, price, description, image, stockQuantity, vendorId);
             return result != -1;
         } catch (Exception e) {
             Log.e(TAG, "Error adding product", e);
@@ -77,12 +74,9 @@ public class ProductRepository {
         }
     }
 
-    /**
-     * Update product
-     */
-    public boolean updateProduct(int productId, String productName, int categoryId, double price, String description, String image) {
+    public boolean updateProduct(int productId, String productName, int categoryId, double price, String description, String image, int stockQuantity, int vendorId) {
         try {
-            return dbHelper.updateProduct(productId, productName, categoryId, price, description, image);
+            return dbHelper.updateProduct(productId, productName, categoryId, price, description, image, stockQuantity, vendorId);
         } catch (Exception e) {
             Log.e(TAG, "Error updating product", e);
             return false;

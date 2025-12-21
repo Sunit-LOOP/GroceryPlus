@@ -9,6 +9,7 @@ import com.sunit.groceryplus.models.OrderItem;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sunit.groceryplus.utils.DeliveryOptimizer;
 public class OrderRepository {
     private static final String TAG = "OrderRepository";
     private DatabaseHelper dbHelper;
@@ -22,12 +23,15 @@ public class OrderRepository {
     /**
      * Create a new order
      */
-    public long createOrder(int userId, double totalAmount, String status) {
+    public long createOrder(int userId, double totalAmount, String status, int addressId) {
         try {
-            long orderId = dbHelper.createOrder(userId, totalAmount, status);
+            long orderId = dbHelper.createOrder(userId, totalAmount, status, addressId);
             if (orderId != -1) {
                 String title = "Order Placed";
-                String message = "Your order #" + orderId + " has been placed successfully.";
+                // Estimate delivery time using Dijkstra's Algorithm
+                int deliveryMin = DeliveryOptimizer.calculateShortestDeliveryTime("Area B"); 
+                String message = "Your order #" + orderId + " is placed! Delivery estimated in " + deliveryMin + " mins.";
+                
                 dbHelper.addNotification(userId, title, message);
                 com.sunit.groceryplus.utils.NotificationUtils.showNotification(context, title, message);
             }

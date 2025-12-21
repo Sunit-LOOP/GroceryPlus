@@ -45,6 +45,19 @@
             android:minHeight="48dp"
             android:layout_marginBottom="8dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vendor"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/vendorSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginBottom="8dp" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

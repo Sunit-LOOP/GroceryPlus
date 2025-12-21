@@ -179,7 +179,16 @@
                     </LinearLayout>
                 </LinearLayout>
             </RelativeLayout>
-        </com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>
+
+        <!-- Link Icon Section -->
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/link_icon"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp"
+            android:contentDescription="Payment Link"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"

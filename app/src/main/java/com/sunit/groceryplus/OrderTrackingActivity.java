@@ -55,34 +55,64 @@ public class OrderTrackingActivity extends AppCompatActivity {
         map.setMultiTouchControls(true);
         map.getController().setZoom(15.0);
         
-        // Simulating locations: Warehouse -> User Location
-        // Using generic coordinates (e.g., Kathmandu, Nepal for demo)
-        GeoPoint startPoint = new GeoPoint(27.7172, 85.3240); // Warehouse
-        GeoPoint endPoint = new GeoPoint(27.7000, 85.3000);   // User
+        // Fetch order and vendor location
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        GeoPoint vendorPoint = new GeoPoint(27.7172, 85.3240); // Default KTM Center
+        GeoPoint deliveryPoint = new GeoPoint(27.7000, 85.3000); // Default User Location
+        String vendorName = "Warehouse";
+        
+        com.sunit.groceryplus.models.Order order = dbHelper.getOrderById(orderId);
+        if (order != null) {
+            // Get delivery address
+            com.sunit.groceryplus.models.Address address = dbHelper.getAddressById(order.getAddressId());
+            if (address != null && address.getLatitude() != 0) {
+                deliveryPoint = new GeoPoint(address.getLatitude(), address.getLongitude());
+            }
+            
+            // Find vendor from order items
+            List<com.sunit.groceryplus.models.OrderItem> orderItems = dbHelper.getOrderItems(orderId);
+            if (orderItems != null && !orderItems.isEmpty()) {
+                com.sunit.groceryplus.models.Product product = dbHelper.getProductById(orderItems.get(0).getProductId());
+                if (product != null) {
+                    com.sunit.groceryplus.models.Vendor vendor = dbHelper.getVendorById(product.getVendorId());
+                    if (vendor != null) {
+                        vendorPoint = new GeoPoint(vendor.getLatitude(), vendor.getLongitude());
+                        vendorName = vendor.getVendorName();
+                    }
+                }
+            }
+        }
 
-        map.getController().setCenter(startPoint);
+        // Center map between vendor and delivery
+        double centerLat = (vendorPoint.getLatitude() + deliveryPoint.getLatitude()) / 2;
+        double centerLon = (vendorPoint.getLongitude() + deliveryPoint.getLongitude()) / 2;
+        map.getController().setCenter(new GeoPoint(centerLat, centerLon));
 
-        // Add Markers
-        Marker startMarker = new Marker(map);
-        startMarker.setPosition(startPoint);
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        startMarker.setTitle("Warehouse");
-        map.getOverlays().add(startMarker);
+        // Add Vendor Marker
+        Marker vendorMarker = new Marker(map);
+        vendorMarker.setPosition(vendorPoint);
+        vendorMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        vendorMarker.setTitle(vendorName + " (Vendor)");
+        vendorMarker.setSnippet("Product source location");
+        map.getOverlays().add(vendorMarker);
 
-        Marker endMarker = new Marker(map);
-        endMarker.setPosition(endPoint);
-        endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        endMarker.setTitle("Delivery Location");
-        map.getOverlays().add(endMarker);
+        // Add Delivery Marker
+        Marker deliveryMarker = new Marker(map);
+        deliveryMarker.setPosition(deliveryPoint);
+        deliveryMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        deliveryMarker.setTitle("Delivery Location");
+        deliveryMarker.setSnippet("Your delivery address");
+        map.getOverlays().add(deliveryMarker);
 
-        // Draw Path (Straight line for demo)
+        // Draw Path from Vendor to Delivery
         List<GeoPoint> geoPoints = new ArrayList<>();
-        geoPoints.add(startPoint);
-        geoPoints.add(endPoint);
+        geoPoints.add(vendorPoint);
+        geoPoints.add(deliveryPoint);
 
         Polyline line = new Polyline();
         line.setPoints(geoPoints);
-        line.setColor(0xFF0000FF); // Blue
+        line.setColor(0xFF4CAF50); // Green for delivery route
+        line.setWidth(5f);
         map.getOverlays().add(line);
     }
 

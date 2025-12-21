@@ -5,12 +5,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
+import com.sunit.groceryplus.models.User;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sunit.groceryplus.R;
-import com.sunit.groceryplus.User;
 
 import java.util.List;
 

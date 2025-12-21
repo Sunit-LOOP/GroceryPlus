@@ -16,14 +16,17 @@
         android:orientation="horizontal"
         android:background="@android:color/white">
 
-        <!-- Home -->
+<!-- Home -->
         <LinearLayout
             android:id="@+id/navHome"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="26dp"
@@ -38,14 +41,17 @@
                 android:textColor="#4CAF50" />
         </LinearLayout>
 
-        <!-- Message -->
+<!-- Message -->
         <LinearLayout
             android:id="@+id/navMessage"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="26dp"
@@ -60,14 +66,17 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- History -->
+<!-- History -->
         <LinearLayout
             android:id="@+id/navHistory"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="26dp"
@@ -82,14 +91,17 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Cart -->
+<!-- Cart -->
         <LinearLayout
             android:id="@+id/navCart"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="26dp"
@@ -104,14 +116,17 @@
                 android:textColor="#9E9E9E" />
         </LinearLayout>
 
-        <!-- Profile -->
+<!-- Profile -->
         <LinearLayout
             android:id="@+id/navProfile"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="26dp"

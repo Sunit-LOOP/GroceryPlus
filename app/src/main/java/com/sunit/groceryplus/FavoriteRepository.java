@@ -5,7 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-
+import com.sunit.groceryplus.models.User;
 import com.sunit.groceryplus.models.Product;
 
 import java.util.ArrayList;
@@ -106,9 +106,11 @@ public class FavoriteRepository {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         
         try {
-            String query = "SELECT p.* FROM " + ProductEntry.TABLE_NAME + " p " +
+            String query = "SELECT p.*, v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME + " FROM " + ProductEntry.TABLE_NAME + " p " +
                           "INNER JOIN " + FavoriteEntry.TABLE_NAME + " f " +
                           "ON p." + ProductEntry.COLUMN_NAME_PRODUCT_ID + " = f." + FavoriteEntry.COLUMN_NAME_PRODUCT_ID +
+                          " LEFT JOIN " + DatabaseContract.VendorEntry.TABLE_NAME + " v " +
+                          "ON p." + ProductEntry.COLUMN_NAME_VENDOR_ID + " = v." + DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_ID +
                           " WHERE f." + FavoriteEntry.COLUMN_NAME_USER_ID + " = ? " +
                           "ORDER BY f." + FavoriteEntry.COLUMN_NAME_ADDED_AT + " DESC";
             
@@ -123,8 +125,11 @@ public class FavoriteRepository {
                         double price = cursor.getDouble(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_PRICE));
                         String description = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_DESCRIPTION));
                         String image = cursor.getString(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_IMAGE));
+                        int stockQuantity = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_STOCK));
+                        int vendorId = cursor.getInt(cursor.getColumnIndexOrThrow(ProductEntry.COLUMN_NAME_VENDOR_ID));
+                        String vendorName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.VendorEntry.COLUMN_NAME_VENDOR_NAME));
                         
-                        Product product = new Product(productId, productName, categoryId, "", price, description, image, 100);
+                        Product product = new Product(productId, productName, categoryId, "", price, description, image, stockQuantity, vendorId, vendorName);
                         favorites.add(product);
                     } catch (Exception e) {
                         Log.e(TAG, "Error parsing favorite product", e);

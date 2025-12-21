@@ -1,267 +1,231 @@
 package com.sunit.groceryplus;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.card.MaterialCardView;
 import com.sunit.groceryplus.models.CartItem;
-import com.sunit.groceryplus.models.Order;
+import com.sunit.groceryplus.network.ApiClient;
+import com.sunit.groceryplus.network.PaymentIntentRequest;
+import com.sunit.groceryplus.network.PaymentIntentResponse;
+import com.sunit.groceryplus.utils.Config;
 
-import java.util.List;
+import com.stripe.android.PaymentConfiguration;
+import com.stripe.android.paymentsheet.PaymentSheet;
+import com.stripe.android.paymentsheet.PaymentSheetResult;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PaymentActivity extends AppCompatActivity {
 
     private static final String TAG = "PaymentActivity";
-    private static final int FAKE_PAYMENT_REQUEST_CODE = 1001;
 
     // UI Elements
-    private RadioGroup paymentMethodGroup;
-    private MaterialCardView stripeCard, codCard;
-    private android.widget.RadioButton paymentStripeRb, paymentCodRb;
-    
-    private TextView totalAmountTv, subtotalAmountTv;
+    private TextView totalAmountTv, summarySubtotal;
     private Button payNowBtn;
     
-    // Data
-    private int userId;
-    private double totalAmount;
-    private double subtotalAmount;
-    private String selectedPaymentMethod = "stripe"; // default
+    private PaymentSheet paymentSheet;
+    private String paymentIntentClientSecret;
+    private double finalAmount = 0.0;
+    private int userId = -1;
     
-    private CartRepository cartRepository;
-    private OrderRepository orderRepository;
+    // Database helper
+    private com.sunit.groceryplus.DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_payment);
-
-        // Get data from intent
+        
+        // Initialize Stripe
+        PaymentConfiguration.init(this, Config.STRIPE_PUBLISHABLE_KEY);
+        paymentSheet = new PaymentSheet(this, this::onPaymentSheetResult);
+        
+        // Get user ID from intent
         userId = getIntent().getIntExtra("user_id", -1);
         if (userId == -1) {
-            android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            userId = sharedPreferences.getInt("userId", -1);
-        }
-
-        totalAmount = getIntent().getDoubleExtra("total_amount", 0.0);
-        subtotalAmount = getIntent().getDoubleExtra("subtotal_amount", totalAmount - 50.0); // Default to total minus delivery if not provided
-        int totalItems = getIntent().getIntExtra("total_items", 0);
-
-        if (userId == -1) {
-            Toast.makeText(this, "Error: Invalid user session", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid user", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-
-        // Initialize repositories
-        cartRepository = new CartRepository(this);
-        orderRepository = new OrderRepository(this);
-
-        // Initialize views
-        initViews();
-
-        // Setup payment method selection
-        setupPaymentMethodSelection();
-
-        // Display order summary
-        displayOrderSummary();
-
-        // Set click listeners
-        payNowBtn.setOnClickListener(v -> processPayment());
-    }
-
-    private void initViews() {
-        paymentMethodGroup = findViewById(R.id.paymentMethodGroup);
-        stripeCard = findViewById(R.id.stripeCard);
-        codCard = findViewById(R.id.codCard);
-        paymentStripeRb = findViewById(R.id.creditCardRadio);
-        paymentCodRb = findViewById(R.id.cashOnDeliveryRadio);
         
+        // Initialize database helper
+        dbHelper = new com.sunit.groceryplus.DatabaseHelper(this);
+        
+        initViews();
+        setupToolbar();
+        loadCartData();
+    }
+    
+    private void initViews() {
         totalAmountTv = findViewById(R.id.paymentTotalAmount);
-        subtotalAmountTv = findViewById(R.id.summarySubtotal);
+        summarySubtotal = findViewById(R.id.summarySubtotal);
         payNowBtn = findViewById(R.id.paymentPayNowBtn);
         
-        // Setup Toolbar
-        setSupportActionBar(findViewById(R.id.paymentToolbar));
-        if(getSupportActionBar() != null) {
+        // Pay button click listener
+        payNowBtn.setOnClickListener(v -> startStripePayment());
+    }
+    
+    private void setupToolbar() {
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.paymentToolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Payment");
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
-    }
-
-    private void setupPaymentMethodSelection() {
-        View.OnClickListener stripeListener = v -> selectStripe();
-        View.OnClickListener codListener = v -> selectCod();
-        
-        stripeCard.setOnClickListener(stripeListener);
-        paymentStripeRb.setOnClickListener(stripeListener);
-        
-        codCard.setOnClickListener(codListener);
-        paymentCodRb.setOnClickListener(codListener);
-        
-        // Initial state
-        if (selectedPaymentMethod.equals("stripe")) {
-             selectStripe();
-        } else {
-             selectCod();
-        }
-    }
-
-    private void selectStripe() {
-        selectedPaymentMethod = "stripe";
-        paymentStripeRb.setChecked(true);
-        paymentCodRb.setChecked(false);
-        
-        highlightCard(stripeCard, true);
-        highlightCard(codCard, false);
-        
-        updatePayButtonText();
-    }
-
-    private void selectCod() {
-        selectedPaymentMethod = "cod";
-        paymentStripeRb.setChecked(false);
-        paymentCodRb.setChecked(true);
-        
-        highlightCard(stripeCard, false);
-        highlightCard(codCard, true);
-        
-        updatePayButtonText();
-    }
-    
-    private void updatePayButtonText() {
-        if (payNowBtn == null) return;
-        
-        if (selectedPaymentMethod.equals("stripe")) {
-            payNowBtn.setText("Pay ₹" + String.format("%.2f", totalAmount));
-        } else {
-            payNowBtn.setText("Confirm Order");
         }
     }
     
-    private void highlightCard(MaterialCardView card, boolean isSelected) {
-        if (isSelected) {
-            card.setStrokeColor(getResources().getColor(android.R.color.holo_green_dark));
-            card.setStrokeWidth(4);
-        } else {
-            card.setStrokeColor(getResources().getColor(android.R.color.darker_gray));
-            card.setStrokeWidth(2);
-        }
-    }
-
-    private void displayOrderSummary() {
-        double deliveryFee = 50.0;
-        // Display subtotal and delivery fee separately
-        subtotalAmountTv.setText("₹" + String.format("%.2f", subtotalAmount)); 
-        totalAmountTv.setText("₹" + String.format("%.2f", totalAmount));
-        updatePayButtonText();
-    }
-
-    private void processPayment() {
-        if (selectedPaymentMethod.equals("stripe")) {
-            Toast.makeText(this, "Starting Stripe Payment...", Toast.LENGTH_SHORT).show();
-            // Launch Fake Payment Screen
-            Intent intent = new Intent(this, FakePaymentActivity.class);
-            intent.putExtra("amount", totalAmount);
-            startActivityForResult(intent, FAKE_PAYMENT_REQUEST_CODE);
-        } else {
-            processCODPayment();
-        }
+    private void loadCartData() {
+        // Simple mock cart data for now
+        double subtotal = 100.0; // Mock subtotal
+        double deliveryFee = 20.0;
+        finalAmount = subtotal + deliveryFee;
+        
+        // Update UI
+        summarySubtotal.setText("₹" + String.format("%.2f", subtotal));
+        totalAmountTv.setText("₹" + String.format("%.2f", finalAmount));
+        
+        // Enable pay button
+        payNowBtn.setEnabled(true);
+        payNowBtn.setText("Pay ₹" + String.format("%.2f", finalAmount) + " with Stripe");
     }
     
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    private void startStripePayment() {
+        Log.d(TAG, "Starting Stripe payment");
         
-        if (requestCode == FAKE_PAYMENT_REQUEST_CODE) {
-            if (resultCode == RESULT_OK && data != null) {
-                String status = data.getStringExtra("status");
-                if ("success".equals(status)) {
-                    createOrder("stripe");
-                } else {
-                    Toast.makeText(this, "Payment Failed or Canceled", Toast.LENGTH_SHORT).show();
-                }
-            }
+        if (!isNetworkAvailable()) {
+            Toast.makeText(this, "No internet connection. Please check your network and try again.", Toast.LENGTH_LONG).show();
+            return;
         }
+        
+        // Validate minimum amount
+        if (finalAmount < 50) { // ₹0.50 minimum
+            Toast.makeText(this, "Minimum amount is ₹0.50", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        payNowBtn.setEnabled(false);
+        payNowBtn.setText("Creating Payment...");
+        
+        createPaymentIntent();
     }
-
-    private void processCODPayment() {
-        Toast.makeText(this, "Processing Cash on Delivery order...", Toast.LENGTH_SHORT).show();
-        createOrder("cod");
-    }
-
-    private void createOrder(String paymentMethod) {
-        try {
-            // Get cart items
-            List<CartItem> cartItems = cartRepository.getCartItems(userId);
-            
-            if (cartItems == null || cartItems.isEmpty()) {
-                Toast.makeText(this, "Cart is empty", Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-
-            // Create order
-            long orderId = orderRepository.createOrder(userId, totalAmount, Order.STATUS_PENDING);
-            
-            if (orderId != -1) {
-                // Add order items
-                boolean allItemsAdded = true;
-                for (CartItem item : cartItems) {
-                    boolean success = orderRepository.addOrderItem(
-                        (int) orderId,
-                        item.getProductId(),
-                        item.getQuantity(),
-                        item.getPrice()
-                    );
-                    if (!success) {
-                        allItemsAdded = false;
-                        break;
+    
+    private void createPaymentIntent() {
+        Log.d(TAG, "Creating PaymentIntent for amount: " + finalAmount);
+        
+        // Convert amount to cents (Stripe expects amount in smallest currency unit)
+        int amountInCents = (int) (finalAmount * 100);
+        
+        PaymentIntentRequest request = new PaymentIntentRequest(amountInCents, "inr");
+        
+        ApiClient.getStripeApi().createPaymentIntent(request)
+            .enqueue(new Callback<PaymentIntentResponse>() {
+                @Override
+                public void onResponse(Call<PaymentIntentResponse> call, Response<PaymentIntentResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        paymentIntentClientSecret = response.body().getClientSecret();
+                        Log.d(TAG, "PaymentIntent created successfully");
+                        presentPaymentSheet();
+                    } else {
+                        String errorMsg = "Failed to create payment intent";
+                        Log.e(TAG, errorMsg + " (Code: " + response.code() + ")");
+                        Toast.makeText(PaymentActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                        resetPayButton();
                     }
                 }
                 
-                if (allItemsAdded) {
-                    cartRepository.clearCart(userId);
+                @Override
+                public void onFailure(Call<PaymentIntentResponse> call, Throwable t) {
+                    Log.e(TAG, "Network error creating PaymentIntent", t);
+                    String errorMsg = "Network error: " + t.getMessage();
                     
-                    // Record payment
-                    String transactionId = "TXN" + System.currentTimeMillis();
-                    orderRepository.recordPayment((int) orderId, totalAmount, paymentMethod, transactionId);
+                    // More specific timeout and network error handling
+                    if (t instanceof java.net.SocketTimeoutException) {
+                        errorMsg = "Payment request timed out. Please check your connection and try again.";
+                    } else if (t instanceof java.net.ConnectException) {
+                        errorMsg = "Cannot connect to payment server. Please check internet connection.";
+                    } else if (t instanceof java.net.UnknownHostException) {
+                        errorMsg = "Payment server not found. Please check server URL.";
+                    } else if (t instanceof java.io.IOException) {
+                        errorMsg = "Network error. Please check your internet connection.";
+                    }
                     
-                    String message = paymentMethod.equals("stripe") 
-                        ? "Payment successful! Order placed." 
-                        : "Order placed successfully! Pay on delivery.";
-                    
-                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                    
-                    // Navigate to Order Success Screen
-                    Intent intent = new Intent(PaymentActivity.this, OrderSuccessActivity.class);
-                    intent.putExtra("user_id", userId);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                    
-                    // Notification handled by OrderRepository
-                    
-                    finish();
-                } else {
-                    Toast.makeText(this, "Error creating order items", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PaymentActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                    resetPayButton();
                 }
-            } else {
-                Toast.makeText(this, "Failed to create order", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error creating order", e);
-            Toast.makeText(this, "Error processing payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+    }
+    
+    private void presentPaymentSheet() {
+        if (paymentIntentClientSecret != null) {
+            PaymentSheet.Configuration configuration = new PaymentSheet.Configuration("GroceryPlus");
+            paymentSheet.presentWithPaymentIntent(paymentIntentClientSecret, configuration);
+        } else {
+            Log.e(TAG, "Cannot present PaymentSheet - client secret is null");
+            Toast.makeText(this, "Payment configuration error", Toast.LENGTH_SHORT).show();
+            resetPayButton();
         }
     }
+    
+    private void onPaymentSheetResult(final PaymentSheetResult paymentSheetResult) {
+        resetPayButton();
+
+        if (paymentSheetResult instanceof PaymentSheetResult.Completed) {
+            Toast.makeText(this, "Payment successfully completed!", Toast.LENGTH_SHORT).show();
+            createOrder("stripe");
+        } else if (paymentSheetResult instanceof PaymentSheetResult.Canceled) {
+            Log.d(TAG, "Payment canceled");
+            Toast.makeText(this, "Payment canceled", Toast.LENGTH_SHORT).show();
+        } else if (paymentSheetResult instanceof PaymentSheetResult.Failed) {
+            Throwable error = ((PaymentSheetResult.Failed) paymentSheetResult).getError();
+            Log.e(TAG, "Payment failed", error);
+            Toast.makeText(this, "Payment failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private void createOrder(String paymentMethod) {
+        Log.d(TAG, "Creating order with payment method: " + paymentMethod);
+        
+        // Create order using direct database method
+        long orderId = dbHelper.createOrder(userId, finalAmount, "PENDING", -1);
+        
+        if (orderId != -1) {
+            // Show success message
+            String message = "Order placed successfully!";
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            
+            // Navigate to order success
+            Intent intent = new Intent(PaymentActivity.this, com.sunit.groceryplus.OrderSuccessActivity.class);
+            intent.putExtra("user_id", userId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            Toast.makeText(this, "Error creating order", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void resetPayButton() {
+        payNowBtn.setEnabled(true);
+        payNowBtn.setText("Pay ₹" + String.format("%.2f", finalAmount) + " with Stripe");
+    }
+    
+    private boolean isNetworkAvailable() {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
+
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == android.R.id.home) {

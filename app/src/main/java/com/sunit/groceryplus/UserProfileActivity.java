@@ -1,9 +1,11 @@
 package com.sunit.groceryplus;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.sunit.groceryplus.models.User;
 
 public class UserProfileActivity extends AppCompatActivity {
 
@@ -29,6 +31,11 @@ public class UserProfileActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
-        // TODO: Implement user profile functionality
+        // Address Management
+        findViewById(R.id.manageAddressesButton).setOnClickListener(v -> {
+            Intent addressIntent = new Intent(this, AddressManagementActivity.class);
+            addressIntent.putExtra("user_id", userId);
+            startActivity(addressIntent);
+        });
     }
 }

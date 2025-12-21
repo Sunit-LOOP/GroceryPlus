@@ -21,7 +21,9 @@ import com.sunit.groceryplus.ProductRepository;
 import com.sunit.groceryplus.R;
 import com.sunit.groceryplus.adapters.AdminProductAdapter;
 import com.sunit.groceryplus.models.Category;
+import com.sunit.groceryplus.DatabaseHelper;
 import com.sunit.groceryplus.models.Product;
+import com.sunit.groceryplus.models.Vendor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +37,15 @@ public class ProductManagementActivity extends AppCompatActivity {
     private CategoryRepository categoryRepository;
     private AdminProductAdapter adapter;
     private List<Category> categories;
+    private List<Vendor> vendors;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_management);
+        
+        dbHelper = new DatabaseHelper(this);
         
         // Setup Toolbar
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
@@ -53,6 +59,7 @@ public class ProductManagementActivity extends AppCompatActivity {
         initViews();
         initRepositories();
         loadCategories();
+        loadVendors();
         setupRecyclerView();
         setClickListeners();
         loadProducts();
@@ -70,6 +77,18 @@ public class ProductManagementActivity extends AppCompatActivity {
     
     private void loadCategories() {
         categories = categoryRepository.getAllCategories();
+        android.util.Log.d("ProductManagement", "Loaded " + (categories != null ? categories.size() : 0) + " categories");
+        if (categories == null || categories.isEmpty()) {
+            android.util.Log.e("ProductManagement", "No categories found! Add categories first.");
+        }
+    }
+
+    private void loadVendors() {
+        vendors = dbHelper.getAllVendors();
+        android.util.Log.d("ProductManagement", "Loaded " + (vendors != null ? vendors.size() : 0) + " vendors");
+        if (vendors == null || vendors.isEmpty()) {
+            android.util.Log.e("ProductManagement", "No vendors found! Add vendors first.");
+        }
     }
     
     private void setupRecyclerView() {
@@ -85,15 +104,37 @@ public class ProductManagementActivity extends AppCompatActivity {
     }
     
     private void setClickListeners() {
+        android.util.Log.d("ProductManagement", "Setting up click listeners");
+        if (addProductFab == null) {
+            android.util.Log.e("ProductManagement", "addProductFab is NULL!");
+            return;
+        }
         addProductFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                android.util.Log.d("ProductManagement", "Add Product FAB clicked!");
                 showProductDialog(null);
             }
         });
     }
     
-    private void showProductDialog(Product product) {
+    public void showProductDialog(Product product) {
+        android.util.Log.d("ProductManagement", "showProductDialog called. Product: " + (product != null ? product.getProductName() : "NEW"));
+        
+        // Check if categories exist
+        if (categories == null || categories.isEmpty()) {
+            android.util.Log.e("ProductManagement", "Cannot show dialog - no categories available");
+            Toast.makeText(this, "Please add categories first before adding products", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        // Check if vendors exist
+        if (vendors == null || vendors.isEmpty()) {
+            android.util.Log.e("ProductManagement", "Cannot show dialog - no vendors available");
+            Toast.makeText(this, "Please add vendors first before adding products", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_product, null);
         builder.setView(dialogView);
@@ -107,6 +148,7 @@ public class ProductManagementActivity extends AppCompatActivity {
         TextInputEditText descriptionEt = dialogView.findViewById(R.id.productDescriptionEt);
         TextInputEditText imageEt = dialogView.findViewById(R.id.productImageEt);
         TextInputEditText stockEt = dialogView.findViewById(R.id.productStockEt);
+        Spinner vendorSpinner = dialogView.findViewById(R.id.vendorSpinner);
         Button cancelBtn = dialogView.findViewById(R.id.cancelBtn);
         Button saveBtn = dialogView.findViewById(R.id.saveBtn);
 
@@ -119,18 +161,35 @@ public class ProductManagementActivity extends AppCompatActivity {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         categorySpinner.setAdapter(spinnerAdapter);
 
+        // Setup Vendor Spinner
+        List<String> vendorNames = new ArrayList<>();
+        for (com.sunit.groceryplus.models.Vendor v : vendors) {
+            vendorNames.add(v.getVendorName());
+        }
+        ArrayAdapter<String> vendorSpinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, vendorNames);
+        vendorSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        vendorSpinner.setAdapter(vendorSpinnerAdapter);
+
         // Populate if editing
         if (product != null) {
             nameEt.setText(product.getProductName());
             priceEt.setText(String.valueOf(product.getPrice()));
             descriptionEt.setText(product.getDescription());
             imageEt.setText(product.getImage());
-            stockEt.setText(String.valueOf(product.getStock()));
+            stockEt.setText(String.valueOf(product.getStockQuantity()));
             
             // Set spinner selection
             for (int i = 0; i < categories.size(); i++) {
                 if (categories.get(i).getCategoryId() == product.getCategoryId()) {
                     categorySpinner.setSelection(i);
+                    break;
+                }
+            }
+
+            // Set vendor spinner selection
+            for (int i = 0; i < vendors.size(); i++) {
+                if (vendors.get(i).getVendorId() == product.getVendorId()) {
+                    vendorSpinner.setSelection(i);
                     break;
                 }
             }
@@ -158,8 +217,15 @@ public class ProductManagementActivity extends AppCompatActivity {
                 return;
             }
             
-            // Note: Currently stock is not persisted in my version of addProduct, assuming it's ignored or handled in future.
-            // But I populated the field for future proofing.
+            int stock = 0;
+            if (!stockStr.isEmpty()) {
+                try {
+                    stock = Integer.parseInt(stockStr);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(this, "Invalid stock quantity", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
 
             int selectedCategoryIndex = categorySpinner.getSelectedItemPosition();
             if (selectedCategoryIndex == -1 && !categories.isEmpty()) {
@@ -173,10 +239,17 @@ public class ProductManagementActivity extends AppCompatActivity {
             
             int categoryId = categories.get(selectedCategoryIndex).getCategoryId();
 
+            int selectedVendorIndex = vendorSpinner.getSelectedItemPosition();
+            if (vendors.isEmpty()) {
+                Toast.makeText(this, "No vendors available. Add vendors first.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            int vendorId = vendors.get(Math.max(0, selectedVendorIndex)).getVendorId();
+
             boolean success;
             if (product == null) {
                 // Add
-                success = productRepository.addProduct(name, categoryId, price, description, image);
+                success = productRepository.addProduct(name, categoryId, price, description, image, stock, vendorId);
                 if (success) {
                     Toast.makeText(this, "Product added successfully", Toast.LENGTH_SHORT).show();
                 } else {
@@ -184,7 +257,7 @@ public class ProductManagementActivity extends AppCompatActivity {
                 }
             } else {
                 // Update
-                success = productRepository.updateProduct(product.getProductId(), name, categoryId, price, description, image);
+                success = productRepository.updateProduct(product.getProductId(), name, categoryId, price, description, image, stock, vendorId);
                 if (success) {
                     Toast.makeText(this, "Product updated successfully", Toast.LENGTH_SHORT).show();
                 } else {
@@ -201,7 +274,7 @@ public class ProductManagementActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void showDeleteConfirmationDialog(Product product) {
+    public void showDeleteConfirmationDialog(Product product) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Product")
                 .setMessage("Are you sure you want to delete " + product.getProductName() + "?")
@@ -216,6 +289,29 @@ public class ProductManagementActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    public void showReviewsDialog(Product product) {
+        List<com.sunit.groceryplus.models.Review> reviews = dbHelper.getReviewsForProduct(product.getProductId());
+        
+        if (reviews.isEmpty()) {
+            Toast.makeText(this, "No reviews for this product yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reviews for " + product.getProductName());
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_view_reviews, null);
+        RecyclerView reviewsRv = dialogView.findViewById(R.id.dialogReviewsRv);
+        reviewsRv.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        
+        com.sunit.groceryplus.adapters.ReviewAdapter reviewAdapter = new com.sunit.groceryplus.adapters.ReviewAdapter(this, reviews);
+        reviewsRv.setAdapter(reviewAdapter);
+
+        builder.setView(dialogView);
+        builder.setPositiveButton("Close", null);
+        builder.show();
     }
     
     @Override

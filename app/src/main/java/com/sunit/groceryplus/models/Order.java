@@ -18,6 +18,7 @@ public class Order {
     private List<OrderItem> items;
     private boolean paymentReceived;
     private String paymentMethod;
+    private int addressId;
 
     // Order status constants
     public static final String STATUS_PENDING = "pending";
@@ -50,6 +51,18 @@ public class Order {
         this.userId = userId;
         this.totalAmount = totalAmount;
         this.status = status;
+        this.items = new ArrayList<>();
+    }
+
+    // Constructor with addressId (used by getOrderById)
+    public Order(int orderId, int userId, String userName, double totalAmount, String status, String orderDate, int addressId) {
+        this.orderId = orderId;
+        this.userId = userId;
+        this.userName = userName;
+        this.totalAmount = totalAmount;
+        this.status = status;
+        this.orderDate = orderDate;
+        this.addressId = addressId;
         this.items = new ArrayList<>();
     }
 
@@ -144,6 +157,14 @@ public class Order {
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public int getAddressId() {
+        return addressId;
+    }
+
+    public void setAddressId(int addressId) {
+        this.addressId = addressId;
     }
 
     // Delivery Person

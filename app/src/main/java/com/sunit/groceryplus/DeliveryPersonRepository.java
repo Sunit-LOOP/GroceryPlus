@@ -43,26 +43,7 @@ public class DeliveryPersonRepository {
         ContentValues values = new ContentValues();
         values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_NAME, name);
         values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_PHONE, phone);
-        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_STATUS, "active");
+        values.put(DatabaseContract.DeliveryPersonEntry.COLUMN_NAME_STATUS, "Available");
         return db.insert(DatabaseContract.DeliveryPersonEntry.TABLE_NAME, null, values);
-    }
-    
-    // Static class for internal use if model doesn't exist yet
-    public static class DeliveryPerson {
-        private int id;
-        private String name;
-        private String phone;
-        private String status;
-
-        public DeliveryPerson(int id, String name, String phone, String status) {
-            this.id = id;
-            this.name = name;
-            this.phone = phone;
-            this.status = status;
-        }
-        
-        public int getId() { return id; }
-        public String getName() { return name; }
-        public String toString() { return name; } // For Adapter
     }
 }

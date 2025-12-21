@@ -66,9 +66,6 @@
             android:exported="false" />
         <activity
             android:name=".PaymentActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FakePaymentActivity"
             android:label="Checkout"
             android:exported="false" />
         <activity
@@ -116,8 +113,24 @@
             android:parentActivityName=".OrderHistoryActivity"
             android:exported="false" />
         <activity
+            android:name=".MapPickerActivity"
+            android:label="Select Delivery Location"
+            android:exported="false" />
+        <activity
             android:name=".NotificationActivity"
             android:label="Notifications"
+            android:exported="false" />
+        <activity
+            android:name=".AddressManagementActivity"
+            android:label="My Addresses"
+            android:exported="false" />
+        <activity
+            android:name=".VendorMapActivity"
+            android:label="Nearby Vendors"
+            android:exported="false" />
+        <activity
+            android:name=".admin.VendorManagementActivity"
+            android:label="Vendor Management"
             android:exported="false" />
     </application>
 

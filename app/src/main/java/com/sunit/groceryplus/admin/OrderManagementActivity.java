@@ -11,10 +11,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.sunit.groceryplus.DatabaseHelper;
 import com.sunit.groceryplus.OrderRepository;
 import com.sunit.groceryplus.R;
 import com.sunit.groceryplus.adapters.AdminOrderAdapter;
+import com.sunit.groceryplus.models.DeliveryPerson;
 import com.sunit.groceryplus.models.Order;
+import com.sunit.groceryplus.utils.DeliveryOptimizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +91,7 @@ public class OrderManagementActivity extends AppCompatActivity {
     private void showAssignDeliveryDialog(Order order) {
         // Load delivery personnel
         com.sunit.groceryplus.DeliveryPersonRepository dpRepo = new com.sunit.groceryplus.DeliveryPersonRepository(this);
-        List<com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson> personnel = dpRepo.getAllDeliveryPersonnel();
+        List<DeliveryPerson> personnel = dpRepo.getAllDeliveryPersonnel();
 
         if (personnel.isEmpty()) {
             // Seed sample data for testing if empty
@@ -97,23 +100,33 @@ public class OrderManagementActivity extends AppCompatActivity {
             personnel = dpRepo.getAllDeliveryPersonnel();
         }
 
-        String[] names = new String[personnel.size()];
+        // Get AI Recommendation using DeliveryOptimizer (using Dijkstra/Nearest Neighbor logic)
+        DeliveryPerson suggested = DeliveryOptimizer.getBestDeliveryPerson("Area B", personnel);
+
+        String[] displayNames = new String[personnel.size()];
+        int suggestedIndex = -1;
+        
         for (int i = 0; i < personnel.size(); i++) {
-            names[i] = personnel.get(i).getName();
+            DeliveryPerson p = personnel.get(i);
+            displayNames[i] = p.getName();
+            if (suggested != null && p.getPersonId() == suggested.getPersonId()) {
+                displayNames[i] += " [AI Suggested]";
+                suggestedIndex = i;
+            }
         }
 
-        final List<com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson> finalPersonnel = personnel;
+        final List<DeliveryPerson> finalPersonnel = personnel;
 
         new AlertDialog.Builder(this)
             .setTitle("Assign Delivery Person")
-            .setSingleChoiceItems(names, -1, (dialog, which) -> {
-                com.sunit.groceryplus.DeliveryPersonRepository.DeliveryPerson selectedPerson = finalPersonnel.get(which);
+            .setSingleChoiceItems(displayNames, suggestedIndex, (dialog, which) -> {
+                DeliveryPerson selectedPerson = finalPersonnel.get(which);
                 
-                boolean success = orderRepository.assignDeliveryPerson(order.getOrderId(), selectedPerson.getId());
+                boolean success = orderRepository.assignDeliveryPerson(order.getOrderId(), selectedPerson.getPersonId());
                 if (success) {
                     Toast.makeText(this, "Assigned to " + selectedPerson.getName(), Toast.LENGTH_SHORT).show();
                     // Send notification to user
-                    com.sunit.groceryplus.DatabaseHelper dbHelper = new com.sunit.groceryplus.DatabaseHelper(this);
+                    DatabaseHelper dbHelper = new DatabaseHelper(this);
                     String title = "Delivery Update";
                     String message = "Your order #" + order.getOrderId() + " has been assigned to " + selectedPerson.getName();
                     dbHelper.addNotification(order.getUserId(), title, message);

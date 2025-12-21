@@ -15,10 +15,9 @@ import com.google.gson.annotations.SerializedName;
 public class Server {
     private static final Gson gson = new Gson();
 
-    // Using a valid test key format for demonstration
-    // In production, you MUST replace this with your actual Stripe secret key
+// Use environment variable for Stripe secret key
     private static final String STRIPE_SECRET_KEY = System.getenv("STRIPE_SECRET_KEY") != null ? 
-        System.getenv("STRIPE_SECRET_KEY") : "STRIPE_KEY_PLACEHOLDER";
+        System.getenv("STRIPE_SECRET_KEY") : "sk_test_your_secret_key_here";
 
     public static void main(String[] args) {
         port(4567);
@@ -68,16 +67,9 @@ public class Server {
 
                 System.out.println("Creating PaymentIntent with params: Amount=" + req.amount + ", Currency=" + req.currency);
                 
-                // If using a fake key, simulate success for testing
-                if (STRIPE_SECRET_KEY.equals("STRIPE_KEY_PLACEHOLDER")) {
-                    System.out.println("Using simulated response for testing purposes");
-                    // Return a fake client secret for testing
-                    return gson.toJson(new PaymentIntentResponse("pi_fake_secret_" + System.currentTimeMillis()));
-                } else {
-                    PaymentIntent paymentIntent = PaymentIntent.create(params);
-                    System.out.println("PaymentIntent created successfully with client secret: " + paymentIntent.getClientSecret());
-                    return gson.toJson(new PaymentIntentResponse(paymentIntent.getClientSecret()));
-                }
+                PaymentIntent paymentIntent = PaymentIntent.create(params);
+                System.out.println("PaymentIntent created successfully with client secret: " + paymentIntent.getClientSecret());
+                return gson.toJson(new PaymentIntentResponse(paymentIntent.getClientSecret()));
             } catch (StripeException e) {
                 System.err.println("Stripe Error: " + e.getCode() + " - " + e.getMessage());
                 e.printStackTrace();

@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.sunit.groceryplus.models.User;
 
 public class SignupActivity extends AppCompatActivity {
 

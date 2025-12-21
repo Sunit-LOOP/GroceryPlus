@@ -64,4 +64,7 @@
 
     </LinearLayout>
 
+    <!-- Custom Bottom Navigation -->
+    <include layout="@layout/bottom_navigation_custom" />
+
 </LinearLayout>

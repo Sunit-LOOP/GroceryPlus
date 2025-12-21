@@ -73,6 +73,9 @@ public class MessageActivity extends AppCompatActivity {
         messageEditText = findViewById(R.id.messageEditText);
         sendButton = findViewById(R.id.sendButton);
         chatRv = findViewById(R.id.chatRv);
+
+        // Setup Bottom Navigation
+        com.sunit.groceryplus.utils.NavigationHelper.setupNavigation(this, userId);
         
         MaterialToolbar toolbar = findViewById(R.id.messageToolbar);
         setSupportActionBar(toolbar);

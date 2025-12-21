@@ -10,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.sunit.groceryplus.models.User;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -136,6 +137,7 @@ public class UserDetailViewActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Navigate to settings activity
                 Intent intent = new Intent(UserDetailViewActivity.this, UserSettingViewActivity.class);
+                intent.putExtra("user_id", userId);
                 startActivity(intent);
             }
         });

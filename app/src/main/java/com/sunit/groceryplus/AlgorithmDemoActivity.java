@@ -124,14 +124,14 @@ public class AlgorithmDemoActivity extends AppCompatActivity {
         List<Product> products = new ArrayList<>();
         
         // Add sample products
-        products.add(new Product(1, "Organic Apple", 1, "Fruits", 120.0, "Fresh organic apples", "apple.png", 50, 4.8));
-        products.add(new Product(2, "Banana", 1, "Fruits", 60.0, "Ripe bananas", "banana.png", 100, 4.5));
-        products.add(new Product(3, "Orange Juice", 2, "Beverages", 80.0, "Fresh orange juice", "juice_bottle.png", 30, 4.7));
-        products.add(new Product(4, "Whole Wheat Bread", 3, "Bakery", 90.0, "Healthy whole wheat bread", "bread.png", 25, 4.6));
-        products.add(new Product(5, "Milk", 4, "Dairy", 70.0, "Fresh pasteurized milk", "bottle_milk.png", 40, 4.4));
-        products.add(new Product(6, "Greek Yogurt", 4, "Dairy", 110.0, "Creamy Greek yogurt", "curd.png", 35, 4.9));
-        products.add(new Product(7, "Basmati Rice", 5, "Staples", 200.0, "Premium basmati rice", "rice_sack.png", 20, 4.3));
-        products.add(new Product(8, "Olive Oil", 6, "Cooking Essentials", 350.0, "Extra virgin olive oil", "oil_bottle.png", 15, 4.8));
+products.add(new Product(1, "Organic Apple", 1, "Fruits", 120.0, "Fresh organic apples", "apple.jpg", 4.8, 50, 1, "General Store"));
+        products.add(new Product(2, "Banana", 1, "Fruits", 60.0, "Ripe bananas", "banana.jpg", 4.5, 100, 1, "General Store"));
+        products.add(new Product(3, "Orange Juice", 2, "Beverages", 80.0, "Fresh orange juice", "juice_bottle.jpg", 4.7, 30, 1, "General Store"));
+        products.add(new Product(4, "Whole Wheat Bread", 3, "Bakery", 90.0, "Healthy whole wheat bread", "bread.jpg", 4.6, 25, 1, "General Store"));
+        products.add(new Product(5, "Milk", 4, "Dairy", 70.0, "Fresh pasteurized milk", "bottle_milk.png", 4.4, 40, 1, "General Store"));
+        products.add(new Product(6, "Greek Yogurt", 4, "Dairy", 110.0, "Creamy Greek yogurt", "curd.png", 4.9, 35, 1, "General Store"));
+products.add(new Product(7, "Basmati Rice", 5, "Staples", 200.0, "Premium basmati rice", "rice_sack.jpg", 4.3, 20, 1, "General Store"));
+        products.add(new Product(8, "Olive Oil", 6, "Cooking Essentials", 350.0, "Extra virgin olive oil", "oil_bottle.jpg", 4.8, 15, 1, "General Store"));
         
         return products;
     }

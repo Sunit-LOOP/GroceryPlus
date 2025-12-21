@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.sunit.groceryplus.models.User;
 
 public class AdminDashboardActivity extends AppCompatActivity {
 
@@ -13,6 +14,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
+        
+        // Setup Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.adminDashboardToolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         // Get user ID from intent
         int userId = getIntent().getIntExtra("user_id", -1);
@@ -59,6 +68,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         findViewById(R.id.paymentReceivedCard).setOnClickListener(v -> {
             startActivity(new android.content.Intent(this, com.sunit.groceryplus.admin.PaymentTrackingActivity.class));
+        });
+
+        findViewById(R.id.vendorManagementCard).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, com.sunit.groceryplus.admin.VendorManagementActivity.class));
         });
         
          findViewById(R.id.logoutButton).setOnClickListener(v -> {

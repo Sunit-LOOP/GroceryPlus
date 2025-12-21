@@ -2,6 +2,7 @@ package com.sunit.groceryplus;
 
 import android.content.Context;
 import android.util.Log;
+import com.sunit.groceryplus.models.User;
 
 public class UserRepository {
     private static final String TAG = "UserRepository";

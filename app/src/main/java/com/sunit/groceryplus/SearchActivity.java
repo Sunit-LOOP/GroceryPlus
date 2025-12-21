@@ -18,13 +18,18 @@ import com.sunit.groceryplus.adapters.ProductAdapter;
 import com.sunit.groceryplus.models.Product;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import com.sunit.groceryplus.utils.SearchSortAlgorithms;
+import android.widget.ImageButton;
+import androidx.appcompat.app.AlertDialog;
 
 public class SearchActivity extends AppCompatActivity {
 
     private static final String TAG = "SearchActivity";
     
     private EditText searchEt;
+    private ImageButton sortBtn;
     private RecyclerView searchResultsRv;
     private TextView noResultsTv;
     
@@ -83,11 +88,44 @@ public class SearchActivity extends AppCompatActivity {
 
     private void initViews() {
         searchEt = findViewById(R.id.searchEt);
+        sortBtn = findViewById(R.id.sortBtn);
         searchResultsRv = findViewById(R.id.searchResultsRv);
         noResultsTv = findViewById(R.id.noResultsTv);
         
+        sortBtn.setOnClickListener(v -> showSortDialog());
+        
         // Auto-focus search field
         searchEt.requestFocus();
+    }
+
+    private void showSortDialog() {
+        String[] options = {"Name: A to Z", "Name: Z to A", "Price: Low to High", "Price: High to Low", "Highest Rated"};
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Sort Products By");
+        builder.setItems(options, (dialog, which) -> {
+            switch (which) {
+                case 0: // Name A-Z
+                    searchResults = SearchSortAlgorithms.mergeSortByName(searchResults);
+                    break;
+                case 1: // Name Z-A
+                    searchResults = SearchSortAlgorithms.mergeSortByName(searchResults);
+                    Collections.reverse(searchResults);
+                    break;
+                case 2: // Price L-H
+                    searchResults = SearchSortAlgorithms.quickSortByPrice(searchResults);
+                    break;
+                case 3: // Price H-L
+                    searchResults = SearchSortAlgorithms.quickSortByPrice(searchResults);
+                    Collections.reverse(searchResults);
+                    break;
+                case 4: // Rating
+                    searchResults = SearchSortAlgorithms.sortByRatingThenPrice(searchResults);
+                    break;
+            }
+            productAdapter.updateProducts(searchResults);
+        });
+        builder.show();
     }
 
     private void setupRecyclerView() {
@@ -154,15 +192,15 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         try {
-            // Search in database
-            List<Product> results = productRepository.searchProducts(query.trim());
+            // Use advanced fuzzy search algorithm
+            List<Product> results = SearchSortAlgorithms.fuzzySearch(allProducts, query.trim());
             
             searchResults.clear();
             if (results != null && !results.isEmpty()) {
                 searchResults.addAll(results);
                 productAdapter.updateProducts(searchResults);
                 showResults();
-                Log.d(TAG, "Found " + results.size() + " products for query: " + query);
+                Log.d(TAG, "Fuzzy found " + results.size() + " products for query: " + query);
             } else {
                 productAdapter.updateProducts(searchResults);
                 showNoResults();

@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.GroceryPLus" parent="Base.Theme.GroceryPLus" />
+
+    <style name="Theme.GroceryPLus.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.GroceryPLus.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -2,6 +2,7 @@ package com.sunit.groceryplus;
 
 import android.content.Context;
 import android.util.Log;
+import com.sunit.groceryplus.models.User;
 
 public class DatabaseConnectionTest {
     private static final String TAG = "DatabaseConnectionTest";

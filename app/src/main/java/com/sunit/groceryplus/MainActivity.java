@@ -2,7 +2,7 @@ package com.sunit.groceryplus;
 
 import android.os.Bundle;
 import android.util.Log;
-
+import com.sunit.groceryplus.models.User;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;

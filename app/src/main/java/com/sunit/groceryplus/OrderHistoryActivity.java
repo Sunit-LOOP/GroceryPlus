@@ -102,6 +102,11 @@ public class OrderHistoryActivity extends AppCompatActivity {
             public void onOrderClick(Order order) {
                 showOrderDetails(order);
             }
+
+            @Override
+            public void onReorderClick(Order order) {
+                reorderItems(order);
+            }
         });
         ordersRecyclerView.setAdapter(orderAdapter);
     }
@@ -147,6 +152,29 @@ public class OrderHistoryActivity extends AppCompatActivity {
         intent.putExtra("order_id", order.getOrderId());
         intent.putExtra("order_status", order.getStatus());
         startActivity(intent);
+    }
+
+    private void reorderItems(Order order) {
+        try {
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            List<OrderItem> items = order.getItems();
+            if (items == null || items.isEmpty()) {
+                items = orderRepository.getOrderItems(order.getOrderId());
+            }
+
+            for (OrderItem item : items) {
+                dbHelper.addToCart(userId, item.getProductId(), item.getQuantity());
+            }
+
+            Toast.makeText(this, "Items added to cart", Toast.LENGTH_SHORT).show();
+            // Redirect to Cart
+            Intent intent = new Intent(this, CartActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error reordering items", e);
+            Toast.makeText(this, "Failed to reorder", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

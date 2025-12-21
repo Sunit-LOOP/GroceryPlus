@@ -40,6 +40,8 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_PRICE = "price";
         public static final String COLUMN_NAME_DESCRIPTION = "description";
         public static final String COLUMN_NAME_IMAGE = "image";
+        public static final String COLUMN_NAME_STOCK = "stock_quantity";
+        public static final String COLUMN_NAME_VENDOR_ID = "vendor_id";
     }
 
     /* Inner class that defines the orders table contents */
@@ -51,6 +53,7 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_STATUS = "status";
         public static final String COLUMN_NAME_ORDER_DATE = "order_date";
         public static final String COLUMN_NAME_DELIVERY_PERSON_ID = "delivery_person_id";
+        public static final String COLUMN_NAME_ADDRESS_ID = "address_id";
     }
 
     /* Inner class that defines the order_items table contents */
@@ -128,6 +131,31 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_TRANSACTION_ID = "transaction_id";
         public static final String COLUMN_NAME_PAYMENT_DATE = "payment_date";
     }
+    
+    public static class AddressEntry implements BaseColumns {
+        public static final String TABLE_NAME = "addresses";
+        public static final String COLUMN_NAME_ADDRESS_ID = "address_id";
+        public static final String COLUMN_NAME_USER_ID = "user_id";
+        public static final String COLUMN_NAME_TYPE = "type"; // Home, Work, etc.
+        public static final String COLUMN_NAME_FULL_ADDRESS = "full_address";
+        public static final String COLUMN_NAME_LANDMARK = "landmark";
+        public static final String COLUMN_NAME_CITY = "city";
+        public static final String COLUMN_NAME_AREA = "area"; // Link to DeliveryOptimizer nodes
+        public static final String COLUMN_NAME_LATITUDE = "latitude";
+        public static final String COLUMN_NAME_LONGITUDE = "longitude";
+        public static final String COLUMN_NAME_IS_DEFAULT = "is_default";
+    }
+
+    public static class VendorEntry implements BaseColumns {
+        public static final String TABLE_NAME = "vendors";
+        public static final String COLUMN_NAME_VENDOR_ID = "vendor_id";
+        public static final String COLUMN_NAME_VENDOR_NAME = "vendor_name";
+        public static final String COLUMN_NAME_ADDRESS = "address";
+        public static final String COLUMN_NAME_LATITUDE = "latitude";
+        public static final String COLUMN_NAME_LONGITUDE = "longitude";
+        public static final String COLUMN_NAME_ICON = "icon"; // drawable name
+        public static final String COLUMN_NAME_RATING = "rating";
+    }
 
     // SQL statements to create tables
     public static final String SQL_CREATE_USERS_TABLE =
@@ -155,7 +183,10 @@ public final class DatabaseContract {
                     ProductEntry.COLUMN_NAME_PRICE + " REAL," +
                     ProductEntry.COLUMN_NAME_DESCRIPTION + " TEXT," +
                     ProductEntry.COLUMN_NAME_IMAGE + " TEXT," +
-                    "FOREIGN KEY(" + ProductEntry.COLUMN_NAME_CATEGORY_ID + ") REFERENCES " + CategoryEntry.TABLE_NAME + "(" + CategoryEntry.COLUMN_NAME_CATEGORY_ID + "))";
+                    ProductEntry.COLUMN_NAME_STOCK + " INTEGER DEFAULT 0," +
+                    ProductEntry.COLUMN_NAME_VENDOR_ID + " INTEGER," +
+                    "FOREIGN KEY(" + ProductEntry.COLUMN_NAME_CATEGORY_ID + ") REFERENCES " + CategoryEntry.TABLE_NAME + "(" + CategoryEntry.COLUMN_NAME_CATEGORY_ID + ")," +
+                    "FOREIGN KEY(" + ProductEntry.COLUMN_NAME_VENDOR_ID + ") REFERENCES " + VendorEntry.TABLE_NAME + "(" + VendorEntry.COLUMN_NAME_VENDOR_ID + "))";
 
     public static final String SQL_CREATE_ORDERS_TABLE =
             "CREATE TABLE " + OrderEntry.TABLE_NAME + " (" +
@@ -165,8 +196,10 @@ public final class DatabaseContract {
                     OrderEntry.COLUMN_NAME_STATUS + " TEXT," +
                     OrderEntry.COLUMN_NAME_ORDER_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
                     OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + " INTEGER," +
+                    OrderEntry.COLUMN_NAME_ADDRESS_ID + " INTEGER," +
                     "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +
-                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + ") REFERENCES " + DeliveryPersonEntry.TABLE_NAME + "(" + DeliveryPersonEntry.COLUMN_NAME_PERSON_ID + "))";
+                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + ") REFERENCES " + DeliveryPersonEntry.TABLE_NAME + "(" + DeliveryPersonEntry.COLUMN_NAME_PERSON_ID + ")," +
+                    "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_ADDRESS_ID + ") REFERENCES " + AddressEntry.TABLE_NAME + "(" + AddressEntry.COLUMN_NAME_ADDRESS_ID + "))";
 
     public static final String SQL_CREATE_ORDER_ITEMS_TABLE =
             "CREATE TABLE " + OrderItemEntry.TABLE_NAME + " (" +
@@ -243,6 +276,30 @@ public final class DatabaseContract {
                     PaymentEntry.COLUMN_NAME_PAYMENT_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY(" + PaymentEntry.COLUMN_NAME_ORDER_ID + ") REFERENCES " + OrderEntry.TABLE_NAME + "(" + OrderEntry.COLUMN_NAME_ORDER_ID + "))";
             
+    public static final String SQL_CREATE_ADDRESSES_TABLE =
+            "CREATE TABLE " + AddressEntry.TABLE_NAME + " (" +
+                    AddressEntry.COLUMN_NAME_ADDRESS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    AddressEntry.COLUMN_NAME_USER_ID + " INTEGER," +
+                    AddressEntry.COLUMN_NAME_TYPE + " TEXT," +
+                    AddressEntry.COLUMN_NAME_FULL_ADDRESS + " TEXT," +
+                    AddressEntry.COLUMN_NAME_LANDMARK + " TEXT," +
+                    AddressEntry.COLUMN_NAME_CITY + " TEXT," +
+                    AddressEntry.COLUMN_NAME_AREA + " TEXT," +
+                    AddressEntry.COLUMN_NAME_LATITUDE + " REAL," +
+                    AddressEntry.COLUMN_NAME_LONGITUDE + " REAL," +
+                    AddressEntry.COLUMN_NAME_IS_DEFAULT + " INTEGER DEFAULT 0," +
+                    "FOREIGN KEY(" + AddressEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + "))";
+
+    public static final String SQL_CREATE_VENDORS_TABLE =
+            "CREATE TABLE " + VendorEntry.TABLE_NAME + " (" +
+                    VendorEntry.COLUMN_NAME_VENDOR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    VendorEntry.COLUMN_NAME_VENDOR_NAME + " TEXT," +
+                    VendorEntry.COLUMN_NAME_ADDRESS + " TEXT," +
+                    VendorEntry.COLUMN_NAME_LATITUDE + " REAL," +
+                    VendorEntry.COLUMN_NAME_LONGITUDE + " REAL," +
+                    VendorEntry.COLUMN_NAME_ICON + " TEXT," +
+                    VendorEntry.COLUMN_NAME_RATING + " REAL DEFAULT 0.0)";
+            
             public static class NotificationEntry implements BaseColumns {
         public static final String TABLE_NAME = "notifications";
         public static final String COLUMN_NAME_NOTIFICATION_ID = "notification_id";
@@ -302,4 +359,10 @@ public final class DatabaseContract {
 
     public static final String SQL_DELETE_PAYMENTS_TABLE =
             "DROP TABLE IF EXISTS " + PaymentEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_VENDORS_TABLE =
+            "DROP TABLE IF EXISTS " + VendorEntry.TABLE_NAME;
+
+    public static final String SQL_DELETE_ADDRESSES_TABLE =
+            "DROP TABLE IF EXISTS " + AddressEntry.TABLE_NAME;
 }

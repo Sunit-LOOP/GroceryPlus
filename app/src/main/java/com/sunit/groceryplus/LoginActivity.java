@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.sunit.groceryplus.models.User;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -79,10 +80,18 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         // Perform login
+        Log.d(TAG, "Attempting login for email: " + email);
         User user = userRepository.loginUser(email, password);
+        
         if (user != null) {
+            Log.d(TAG, "=== LOGIN SUCCESSFUL ===");
+            Log.d(TAG, "User ID: " + user.getUserId());
+            Log.d(TAG, "User Name: " + user.getName());
+            Log.d(TAG, "User Email: " + user.getEmail());
+            Log.d(TAG, "User Type: " + user.getUserType());
+            Log.d(TAG, "Is Admin: " + user.isAdmin());
+            
             Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "User logged in: " + user.getName() + " (" + user.getUserType() + ")");
 
             // Save session
             android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -91,22 +100,31 @@ public class LoginActivity extends AppCompatActivity {
             editor.putString("userName", user.getName());
             editor.putString("userEmail", user.getEmail());
             editor.putString("userType", user.getUserType());
-            editor.apply();
+            editor.commit();
+            Log.d(TAG, "Session saved to SharedPreferences");
 
             // Navigate to appropriate screen based on user type
             if (user.isAdmin()) {
+                Log.d(TAG, "User is ADMIN - Redirecting to AdminDashboardActivity");
                 Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
                 intent.putExtra("user_id", user.getUserId());
+                Log.d(TAG, "Starting AdminDashboardActivity...");
                 startActivity(intent);
             } else {
+                Log.d(TAG, "User is CUSTOMER - Redirecting to UserHomeActivity");
                 Intent intent = new Intent(LoginActivity.this, UserHomeActivity.class);
                 intent.putExtra("user_id", user.getUserId());
+                Log.d(TAG, "Intent created with user_id: " + user.getUserId());
+                Log.d(TAG, "Starting UserHomeActivity...");
                 startActivity(intent);
+                Log.d(TAG, "UserHomeActivity started successfully");
             }
+            Log.d(TAG, "Finishing LoginActivity...");
             finish();
+            Log.d(TAG, "=== LOGIN FLOW COMPLETE ===");
         } else {
             Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Login failed for email: " + email);
+            Log.e(TAG, "Login failed for email: " + email + " - User is null");
         }
     }
 }
