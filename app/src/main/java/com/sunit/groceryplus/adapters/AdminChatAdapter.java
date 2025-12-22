@@ -5,7 +5,6 @@ import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,14 +13,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.sunit.groceryplus.DatabaseContract;
 import com.sunit.groceryplus.R;
 
-public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.ViewHolder> {
+public class AdminChatAdapter extends RecyclerView.Adapter<AdminChatAdapter.ViewHolder> {
+
+    private static final int VIEW_TYPE_SENT = 1;
+    private static final int VIEW_TYPE_RECEIVED = 2;
 
     private Context context;
     private Cursor cursor;
+    private int adminId;
 
-    public NotificationAdapter(Context context, Cursor cursor) {
+    public AdminChatAdapter(Context context, Cursor cursor, int adminId) {
         this.context = context;
         this.cursor = cursor;
+        this.adminId = adminId;
     }
 
     public void swapCursor(Cursor newCursor) {
@@ -34,10 +38,24 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         }
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (!cursor.moveToPosition(position)) {
+            return -1;
+        }
+        int senderId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.MessageEntry.COLUMN_NAME_SENDER_ID));
+        return senderId == adminId ? VIEW_TYPE_SENT : VIEW_TYPE_RECEIVED;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.row_notification, parent, false);
+        View view;
+        if (viewType == VIEW_TYPE_SENT) {
+            view = LayoutInflater.from(context).inflate(R.layout.row_chat_sent, parent, false);
+        } else {
+            view = LayoutInflater.from(context).inflate(R.layout.row_chat_received, parent, false);
+        }
         return new ViewHolder(view);
     }
 
@@ -47,11 +65,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             return;
         }
 
-        String title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.NotificationEntry.COLUMN_NAME_TITLE));
-        String message = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.NotificationEntry.COLUMN_NAME_MESSAGE));
-        String timestamp = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.NotificationEntry.COLUMN_NAME_CREATED_AT));
+        String message = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.MessageEntry.COLUMN_NAME_MESSAGE_TEXT));
+        String timestamp = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.MessageEntry.COLUMN_NAME_CREATED_AT));
 
-        holder.title.setText(title);
         holder.message.setText(message);
         holder.timestamp.setText(timestamp);
     }
@@ -62,13 +78,12 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView title, message, timestamp;
+        TextView message, timestamp;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            title = itemView.findViewById(R.id.notificationTitle);
-            message = itemView.findViewById(R.id.notificationMessage);
-            timestamp = itemView.findViewById(R.id.notificationTimestamp);
+            message = itemView.findViewById(R.id.chatMessageTv);
+            timestamp = itemView.findViewById(R.id.chatTimestampTv);
         }
     }
 }

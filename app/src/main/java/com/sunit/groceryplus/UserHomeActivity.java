@@ -14,10 +14,16 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.sunit.groceryplus.adapters.BannerAdapter;
 import com.sunit.groceryplus.adapters.CategoryAdapter;
 import com.sunit.groceryplus.adapters.ProductAdapter;
 import com.sunit.groceryplus.models.Category;
 import com.sunit.groceryplus.models.Product;
+
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+import androidx.viewpager2.widget.ViewPager2;
+import android.os.Handler;
 
 import com.sunit.groceryplus.utils.RecommendationEngine;
 import java.util.ArrayList;
@@ -27,29 +33,36 @@ import java.util.List;
 public class UserHomeActivity extends AppCompatActivity {
 
     private static final String TAG = "UserHomeActivity";
-    
+
     private RecyclerView categoriesRv, featuredRecyclerView, allProductsRecyclerView, buyAgainRecyclerView, recommendedRecyclerView;
     private CategoryAdapter categoryAdapter;
     private ProductAdapter featuredAdapter, allProductsAdapter, buyAgainAdapter, recommendedAdapter;
-    
+
     private TextView deliveryTimeTv, freeDeliveryTv;
     private com.google.android.material.progressindicator.LinearProgressIndicator freeDeliveryProgress;
     private View freeDeliveryGoalCard, buyAgainSection, recommendationSection;
     private ImageView sortIcon;
-    
+
+    private ViewPager2 bannerViewPager;
+    private TabLayout bannerIndicator;
+    private BannerAdapter bannerAdapter;
+    private Handler bannerHandler = new Handler();
+    private Runnable bannerRunnable;
+    private static final long BANNER_DELAY = 30000; // 30 seconds
+
     private int userId;
     private CategoryRepository categoryRepository;
     private ProductRepository productRepository;
     private CartRepository cartRepository;
     private OrderRepository orderRepository;
     private RecommendationEngine recommendationEngine;
-    
+
     private List<Category> categories = new ArrayList<>();
     private List<Product> featuredProducts = new ArrayList<>();
     private List<Product> allProducts = new ArrayList<>();
     private List<Product> buyAgainProducts = new ArrayList<>();
     private List<Product> recommendedProducts = new ArrayList<>();
-    
+
     private int selectedCategoryId = -1;
     private String currentSortOrder = "default";
 
@@ -65,7 +78,7 @@ public class UserHomeActivity extends AppCompatActivity {
             android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
             userId = sharedPreferences.getInt("userId", -1);
             Log.d(TAG, "Retrieved user_id from SharedPreferences: " + userId);
-            
+
             // Also get other user details
             String userName = sharedPreferences.getString("userName", "");
             String userEmail = sharedPreferences.getString("userEmail", "");
@@ -93,6 +106,7 @@ public class UserHomeActivity extends AppCompatActivity {
 
         initViews();
         setupRecyclerViews();
+        setupBanner();
         setupToolbar();
         setupSortFunctionality();
 
@@ -103,14 +117,14 @@ public class UserHomeActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         Log.d(TAG, "onNewIntent called - UserHomeActivity brought to front via navigation");
-        
+
         // Update userId if provided in new intent
         int newUserId = intent.getIntExtra("user_id", -1);
         if (newUserId != -1) {
             userId = newUserId;
             Log.d(TAG, "Updated userId from new intent: " + userId);
         }
-        
+
         // Refresh data
         loadData();
     }
@@ -130,6 +144,9 @@ public class UserHomeActivity extends AppCompatActivity {
         recommendedRecyclerView = findViewById(R.id.recommendedRecyclerView);
         recommendationSection = findViewById(R.id.recommendationSection);
 
+        bannerViewPager = findViewById(R.id.bannerViewPager);
+        bannerIndicator = findViewById(R.id.bannerIndicator);
+
         findViewById(R.id.btnSearchField).setOnClickListener(v -> {
             Intent intent = new Intent(this, SearchActivity.class);
             intent.putExtra("user_id", userId);
@@ -138,6 +155,13 @@ public class UserHomeActivity extends AppCompatActivity {
 
         findViewById(R.id.exploreVendorsCard).setOnClickListener(v -> {
             Intent intent = new Intent(this, VendorMapActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivity(intent);
+        });
+
+        ImageView notificationBell = findViewById(R.id.notification_bell);
+        notificationBell.setOnClickListener(v -> {
+            Intent intent = new Intent(this, NotificationActivity.class);
             intent.putExtra("user_id", userId);
             startActivity(intent);
         });
@@ -174,6 +198,32 @@ public class UserHomeActivity extends AppCompatActivity {
         allProductsRecyclerView.setAdapter(allProductsAdapter);
         buyAgainRecyclerView.setAdapter(buyAgainAdapter);
         recommendedRecyclerView.setAdapter(recommendedAdapter);
+    }
+
+    private void setupBanner() {
+        List<Integer> bannerImages = new ArrayList<>();
+        bannerImages.add(R.drawable.banner_1);
+        bannerImages.add(R.drawable.banner_2);
+        bannerImages.add(R.drawable.banner_3);
+        bannerImages.add(R.drawable.banner_4);
+        bannerImages.add(R.drawable.banner_5);
+
+        bannerAdapter = new BannerAdapter(this, bannerImages);
+        bannerViewPager.setAdapter(bannerAdapter);
+
+        // Link Tab Layout with ViewPager2
+        new TabLayoutMediator(bannerIndicator, bannerViewPager, (tab, position) -> {
+            // No text needed for dots
+        }).attach();
+
+        // Auto-scroll logic
+        bannerRunnable = () -> {
+            int currentItem = bannerViewPager.getCurrentItem();
+            int totalItems = bannerAdapter.getItemCount();
+            int nextItem = (currentItem + 1) % totalItems;
+            bannerViewPager.setCurrentItem(nextItem, true);
+            bannerHandler.postDelayed(bannerRunnable, BANNER_DELAY);
+        };
     }
 
     private void setupToolbar() {
@@ -305,5 +355,16 @@ public class UserHomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadData();
+        if (bannerHandler != null && bannerRunnable != null) {
+            bannerHandler.postDelayed(bannerRunnable, BANNER_DELAY);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (bannerHandler != null && bannerRunnable != null) {
+            bannerHandler.removeCallbacks(bannerRunnable);
+        }
     }
 }

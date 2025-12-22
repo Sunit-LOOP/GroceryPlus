@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.card.MaterialCardView;
+import android.widget.RadioButton;
 import com.sunit.groceryplus.models.CartItem;
 import com.sunit.groceryplus.network.ApiClient;
 import com.sunit.groceryplus.network.PaymentIntentRequest;
@@ -31,8 +32,10 @@ public class PaymentActivity extends AppCompatActivity {
     private static final String TAG = "PaymentActivity";
 
     // UI Elements
-    private TextView totalAmountTv, summarySubtotal;
+    private TextView totalAmountTv, summarySubtotal, summaryDeliveryFee;
     private Button payNowBtn;
+    private RadioButton creditCardRadio, cashOnDeliveryRadio;
+    private MaterialCardView stripeCard, codCard;
     
     private PaymentSheet paymentSheet;
     private String paymentIntentClientSecret;
@@ -70,10 +73,23 @@ public class PaymentActivity extends AppCompatActivity {
     private void initViews() {
         totalAmountTv = findViewById(R.id.paymentTotalAmount);
         summarySubtotal = findViewById(R.id.summarySubtotal);
+        summaryDeliveryFee = findViewById(R.id.summaryDeliveryFee);
         payNowBtn = findViewById(R.id.paymentPayNowBtn);
-        
+
+        // Initialize radio buttons
+        creditCardRadio = findViewById(R.id.creditCardRadio);
+        cashOnDeliveryRadio = findViewById(R.id.cashOnDeliveryRadio);
+
+        // Initialize cards
+        stripeCard = findViewById(R.id.stripeCard);
+        codCard = findViewById(R.id.codCard);
+
+        // Card click listeners for payment method selection
+        stripeCard.setOnClickListener(v -> selectStripePayment());
+        codCard.setOnClickListener(v -> selectCodPayment());
+
         // Pay button click listener
-        payNowBtn.setOnClickListener(v -> startStripePayment());
+        payNowBtn.setOnClickListener(v -> processPayment());
     }
     
     private void setupToolbar() {
@@ -86,47 +102,84 @@ public class PaymentActivity extends AppCompatActivity {
     }
     
     private void loadCartData() {
-        // Simple mock cart data for now
-        double subtotal = 100.0; // Mock subtotal
-        double deliveryFee = 20.0;
-        finalAmount = subtotal + deliveryFee;
-        
+        // Get amounts from intent
+        double subtotal = getIntent().getDoubleExtra("subtotal_amount", 0.0);
+        finalAmount = getIntent().getDoubleExtra("total_amount", 0.0);
+        double deliveryFee = finalAmount - subtotal;
+
         // Update UI
         summarySubtotal.setText("₹" + String.format("%.2f", subtotal));
-        totalAmountTv.setText("₹" + String.format("%.2f", finalAmount));
-        
-        // Enable pay button
+        if (summaryDeliveryFee != null) {
+            summaryDeliveryFee.setText("₹" + String.format("%.2f", deliveryFee));
+        }
+        totalAmountTv.setText("Rs. " + String.format("%.2f", finalAmount));
+
+        // Enable pay button and set initial text based on selected payment method
         payNowBtn.setEnabled(true);
-        payNowBtn.setText("Pay ₹" + String.format("%.2f", finalAmount) + " with Stripe");
+        updatePayButtonText();
+        updateCardStyles();
+    }
+
+    private void selectStripePayment() {
+        creditCardRadio.setChecked(true);
+        cashOnDeliveryRadio.setChecked(false);
+        updateCardStyles();
+        updatePayButtonText();
+    }
+
+    private void selectCodPayment() {
+        creditCardRadio.setChecked(false);
+        cashOnDeliveryRadio.setChecked(true);
+        updateCardStyles();
+        updatePayButtonText();
+    }
+
+    private void updateCardStyles() {
+        // Update card appearances based on selection
+        if (creditCardRadio.isChecked()) {
+            stripeCard.setStrokeColor(getResources().getColor(R.color.primary));
+            codCard.setStrokeColor(getResources().getColor(R.color.chip_background_color));
+        } else {
+            stripeCard.setStrokeColor(getResources().getColor(R.color.chip_background_color));
+            codCard.setStrokeColor(getResources().getColor(R.color.primary));
+        }
+    }
+
+    private void updatePayButtonText() {
+        if (creditCardRadio.isChecked()) {
+            payNowBtn.setText("Pay Rs. " + String.format("%.2f", finalAmount) + " with Stripe");
+        } else {
+            payNowBtn.setText("Place Order (Cash on Delivery)");
+        }
     }
     
+    private void processPayment() {
+        if (creditCardRadio.isChecked()) {
+            // Stripe payment
+            startStripePayment();
+        } else if (cashOnDeliveryRadio.isChecked()) {
+            // Cash on Delivery
+            createOrder("cod");
+        }
+    }
+
     private void startStripePayment() {
-        Log.d(TAG, "Starting Stripe payment");
-        
-        if (!isNetworkAvailable()) {
-            Toast.makeText(this, "No internet connection. Please check your network and try again.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        
-        // Validate minimum amount
-        if (finalAmount < 50) { // ₹0.50 minimum
-            Toast.makeText(this, "Minimum amount is ₹0.50", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        payNowBtn.setEnabled(false);
-        payNowBtn.setText("Creating Payment...");
-        
-        createPaymentIntent();
+        Log.d(TAG, "Starting Fake Stripe payment redirection");
+
+        Intent intent = new Intent(this, FakePaymentActivity.class);
+        intent.putExtra("user_id", userId);
+        intent.putExtra("amount", finalAmount);
+        intent.putExtra("subtotal_amount", getIntent().getDoubleExtra("subtotal_amount", 0.0));
+        startActivity(intent);
     }
     
     private void createPaymentIntent() {
         Log.d(TAG, "Creating PaymentIntent for amount: " + finalAmount);
         
-        // Convert amount to cents (Stripe expects amount in smallest currency unit)
-        int amountInCents = (int) (finalAmount * 100);
-        
-        PaymentIntentRequest request = new PaymentIntentRequest(amountInCents, "inr");
+        // Convert amount to paisa (Stripe expects amount in smallest currency unit)
+        int amountInPaisa = (int) (finalAmount * 100);
+
+        PaymentIntentRequest request = new PaymentIntentRequest(amountInPaisa, "npr");
         
         ApiClient.getStripeApi().createPaymentIntent(request)
             .enqueue(new Callback<PaymentIntentResponse>() {
@@ -195,15 +248,23 @@ public class PaymentActivity extends AppCompatActivity {
     
     private void createOrder(String paymentMethod) {
         Log.d(TAG, "Creating order with payment method: " + paymentMethod);
-        
+
         // Create order using direct database method
-        long orderId = dbHelper.createOrder(userId, finalAmount, "PENDING", -1);
-        
+        double subtotal = getIntent().getDoubleExtra("subtotal_amount", 0.0);
+        double deliveryFee = finalAmount - subtotal;
+        long orderId = dbHelper.createOrder(userId, finalAmount, deliveryFee, "PENDING", -1);
+
         if (orderId != -1) {
+            // Add payment record for tracking
+            long paymentId = dbHelper.addPayment((int)orderId, finalAmount, paymentMethod, "TXN_" + System.currentTimeMillis());
+            if (paymentId == -1) {
+                Log.e(TAG, "Failed to add payment record for order: " + orderId);
+            }
+
             // Show success message
             String message = "Order placed successfully!";
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            
+
             // Navigate to order success
             Intent intent = new Intent(PaymentActivity.this, com.sunit.groceryplus.OrderSuccessActivity.class);
             intent.putExtra("user_id", userId);
@@ -217,7 +278,7 @@ public class PaymentActivity extends AppCompatActivity {
     
     private void resetPayButton() {
         payNowBtn.setEnabled(true);
-        payNowBtn.setText("Pay ₹" + String.format("%.2f", finalAmount) + " with Stripe");
+        payNowBtn.setText("Pay Rs. " + String.format("%.2f", finalAmount) + " with Stripe");
     }
     
     private boolean isNetworkAvailable() {

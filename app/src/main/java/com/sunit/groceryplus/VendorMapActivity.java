@@ -1,5 +1,9 @@
 package com.sunit.groceryplus;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
@@ -10,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.card.MaterialCardView;
 import com.sunit.groceryplus.models.Vendor;
@@ -90,11 +95,8 @@ public class VendorMapActivity extends AppCompatActivity {
             marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             marker.setTitle(vendor.getVendorName());
             
-            // Set custom vendor icon
-            int iconId = getResources().getIdentifier(vendor.getIcon(), "drawable", getPackageName());
-            if (iconId != 0) {
-                marker.setIcon(getResources().getDrawable(iconId));
-            }
+            // Set small vendor icon
+            marker.setIcon(getSmallIcon());
 
             marker.setOnMarkerClickListener((m, mapView) -> {
                 showVendorInfo(vendor);
@@ -111,6 +113,15 @@ public class VendorMapActivity extends AppCompatActivity {
         vendorAddressTv.setText(vendor.getAddress());
         vendorRatingTv.setText(String.format("Rating: %.1f ⭐", vendor.getRating()));
         vendorInfoCard.setVisibility(View.VISIBLE);
+    }
+
+    private Drawable getSmallIcon() {
+        Drawable drawable = ContextCompat.getDrawable(this, R.drawable.ic_location);
+        Bitmap bitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, 32, 32);
+        drawable.draw(canvas);
+        return new BitmapDrawable(getResources(), bitmap);
     }
 
     @Override

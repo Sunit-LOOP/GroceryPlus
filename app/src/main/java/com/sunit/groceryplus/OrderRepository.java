@@ -23,9 +23,9 @@ public class OrderRepository {
     /**
      * Create a new order
      */
-    public long createOrder(int userId, double totalAmount, String status, int addressId) {
+    public long createOrder(int userId, double totalAmount, double deliveryFee, String status, int addressId) {
         try {
-            long orderId = dbHelper.createOrder(userId, totalAmount, status, addressId);
+            long orderId = dbHelper.createOrder(userId, totalAmount, deliveryFee, status, addressId);
             if (orderId != -1) {
                 String title = "Order Placed";
                 // Estimate delivery time using Dijkstra's Algorithm
@@ -99,7 +99,17 @@ public class OrderRepository {
             boolean success = dbHelper.updateOrderStatus(orderId, status);
             if (success) {
                 String title = "Order Update";
-                String message = "Your order #" + orderId + " is now " + status;
+                String message;
+                if ("delivered".equalsIgnoreCase(status)) {
+                    title = "Order Delivered!";
+                    message = "Great news! Your order #" + orderId + " has been delivered. Enjoy your groceries!";
+                } else if ("shipped".equalsIgnoreCase(status)) {
+                    title = "Order Shipped!";
+                    message = "Your order #" + orderId + " is on its way! It should arrive in about 30 minutes.";
+                } else {
+                    message = "Your order #" + orderId + " is now " + status;
+                }
+                
                 dbHelper.addNotification(userId, title, message);
                 com.sunit.groceryplus.utils.NotificationUtils.showNotification(context, title, message);
             }

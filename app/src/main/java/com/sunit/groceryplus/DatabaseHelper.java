@@ -28,7 +28,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Info
     private static final String DATABASE_NAME = "GroceryPlus.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 6;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -507,13 +507,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     /**
      * Create a new order
      */
-    public long createOrder(int userId, double totalAmount, String status, int addressId) {
+    public long createOrder(int userId, double totalAmount, double deliveryFee, String status, int addressId) {
         SQLiteDatabase db = this.getWritableDatabase();
         
         try {
             ContentValues values = new ContentValues();
             values.put(OrderEntry.COLUMN_NAME_USER_ID, userId);
             values.put(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT, totalAmount);
+            values.put(OrderEntry.COLUMN_NAME_DELIVERY_FEE, deliveryFee);
             values.put(OrderEntry.COLUMN_NAME_STATUS, status);
             values.put(OrderEntry.COLUMN_NAME_ADDRESS_ID, addressId);
             
@@ -991,8 +992,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String userEmail = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_EMAIL));
                     String userPhone = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_PHONE));
                     double totalAmount = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT));
+                    double deliveryFee = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_DELIVERY_FEE));
                     String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
                     String orderDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
+                    String shippedDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_SHIPPED_DATE));
                     
                     int deliveryPersonIdIndex = cursor.getColumnIndex(OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID);
                     int deliveryPersonId = (deliveryPersonIdIndex != -1) ? cursor.getInt(deliveryPersonIdIndex) : 0;
@@ -1016,8 +1019,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     }
                     
                     com.sunit.groceryplus.models.Order order = new com.sunit.groceryplus.models.Order(
-                        orderId, userId, userName, userEmail, userPhone, totalAmount, status, orderDate
+                        orderId, userId, userName, userEmail, userPhone, totalAmount, deliveryFee, status, orderDate
                     );
+                    order.setShippedDate(shippedDate);
                     order.setPaymentReceived(paymentReceived);
                     order.setPaymentMethod(paymentMethod);
                     order.setDeliveryPersonId(deliveryPersonId);
@@ -1061,8 +1065,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String userEmail = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_EMAIL));
                     String userPhone = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_PHONE));
                     double totalAmount = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT));
+                    double deliveryFee = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_DELIVERY_FEE));
                     String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
                     String orderDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
+                    String shippedDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_SHIPPED_DATE));
 
                     int deliveryPersonIdIndex = cursor.getColumnIndex(OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID);
                     int deliveryPersonId = (deliveryPersonIdIndex != -1) ? cursor.getInt(deliveryPersonIdIndex) : 0;
@@ -1074,8 +1080,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     }
                     
                     com.sunit.groceryplus.models.Order order = new com.sunit.groceryplus.models.Order(
-                        orderId, userId, userName, userEmail, userPhone, totalAmount, status, orderDate
+                        orderId, userId, userName, userEmail, userPhone, totalAmount, deliveryFee, status, orderDate
                     );
+                    order.setShippedDate(shippedDate);
                     order.setDeliveryPersonId(deliveryPersonId);
                     order.setDeliveryPersonName(deliveryPersonName);
                     
@@ -1138,6 +1145,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             ContentValues values = new ContentValues();
             values.put(OrderEntry.COLUMN_NAME_STATUS, status);
+            
+            if ("shipped".equalsIgnoreCase(status)) {
+                values.put(OrderEntry.COLUMN_NAME_SHIPPED_DATE, new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date()));
+            }
             
             int result = db.update(OrderEntry.TABLE_NAME, values, 
                                   OrderEntry.COLUMN_NAME_ORDER_ID + " = ?", 
@@ -1264,24 +1275,7 @@ addProduct("Apple", (int)fruitsId, 120.0, "Fresh red apples", "apple", 200, 1);
         }
     }
     
-    /**
-     * Add product with stock
-     */
-public long addProduct(String productName, int categoryId, double price, String description, String image, String unit, int vendorId) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        
-        ContentValues values = new ContentValues();
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_PRODUCT_NAME, productName);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_CATEGORY_ID, categoryId);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_PRICE, price);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_DESCRIPTION, description);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_IMAGE, image);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_VENDOR_ID, vendorId);
-        values.put(DatabaseContract.ProductEntry.COLUMN_NAME_STOCK, 100); // Default stock quantity
-        
-        long productId = db.insert(DatabaseContract.ProductEntry.TABLE_NAME, null, values);
-        return productId;
-    }
+
     // Analytics Methods
 
     public double getTotalRevenue() {
@@ -1614,11 +1608,15 @@ public long addProduct(String productName, int categoryId, double price, String 
             int userId = cursor.getInt(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_USER_ID));
             String userName = cursor.getString(cursor.getColumnIndexOrThrow(UserEntry.COLUMN_NAME_USER_NAME));
             double amount = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_TOTAL_AMOUNT));
+            double deliveryFee = cursor.getDouble(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_DELIVERY_FEE));
             String status = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_STATUS));
             String date = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ORDER_DATE));
+            String shippedDate = cursor.getString(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_SHIPPED_DATE));
             int addressId = cursor.getInt(cursor.getColumnIndexOrThrow(OrderEntry.COLUMN_NAME_ADDRESS_ID));
             cursor.close();
-            return new com.sunit.groceryplus.models.Order(orderId, userId, userName, amount, status, date, addressId);
+            com.sunit.groceryplus.models.Order order = new com.sunit.groceryplus.models.Order(orderId, userId, userName, amount, deliveryFee, status, date, addressId);
+            order.setShippedDate(shippedDate);
+            return order;
         }
         return null;
     }

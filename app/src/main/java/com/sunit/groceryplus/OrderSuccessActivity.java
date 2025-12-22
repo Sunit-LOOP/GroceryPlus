@@ -8,6 +8,7 @@ import android.os.Looper;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.sunit.groceryplus.utils.NotificationHelper;
 
 public class OrderSuccessActivity extends AppCompatActivity {
 
@@ -16,11 +17,20 @@ public class OrderSuccessActivity extends AppCompatActivity {
         navigateToHome();
     };
 
-@Override
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_success);
-        
+
+        // Get user ID from intent
+        int userId = getIntent().getIntExtra("user_id", -1);
+
+        // Send notification
+        if (userId != -1) {
+            NotificationHelper notificationHelper = new NotificationHelper(this);
+            notificationHelper.sendNotification(userId, "Order Placed!", "Your order has been successfully placed.");
+        }
+
         // Handle back press with modern dispatcher
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -30,7 +40,7 @@ public class OrderSuccessActivity extends AppCompatActivity {
                 navigateToHome();
             }
         });
-        
+
         // Start timer
         handler.postDelayed(navigateRunnable, 3000);
     }
@@ -50,6 +60,5 @@ public class OrderSuccessActivity extends AppCompatActivity {
         // Prevent navigation if activity is destroyed
         handler.removeCallbacks(navigateRunnable);
     }
-    
 
 }

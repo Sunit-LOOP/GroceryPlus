@@ -50,8 +50,10 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_ORDER_ID = "order_id";
         public static final String COLUMN_NAME_USER_ID = "user_id";
         public static final String COLUMN_NAME_TOTAL_AMOUNT = "total_amount";
+        public static final String COLUMN_NAME_DELIVERY_FEE = "delivery_fee";
         public static final String COLUMN_NAME_STATUS = "status";
         public static final String COLUMN_NAME_ORDER_DATE = "order_date";
+        public static final String COLUMN_NAME_SHIPPED_DATE = "shipped_date";
         public static final String COLUMN_NAME_DELIVERY_PERSON_ID = "delivery_person_id";
         public static final String COLUMN_NAME_ADDRESS_ID = "address_id";
     }
@@ -193,8 +195,10 @@ public final class DatabaseContract {
                     OrderEntry.COLUMN_NAME_ORDER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                     OrderEntry.COLUMN_NAME_USER_ID + " INTEGER," +
                     OrderEntry.COLUMN_NAME_TOTAL_AMOUNT + " REAL," +
+                    OrderEntry.COLUMN_NAME_DELIVERY_FEE + " REAL DEFAULT 0.0," +
                     OrderEntry.COLUMN_NAME_STATUS + " TEXT," +
                     OrderEntry.COLUMN_NAME_ORDER_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                    OrderEntry.COLUMN_NAME_SHIPPED_DATE + " DATETIME," +
                     OrderEntry.COLUMN_NAME_DELIVERY_PERSON_ID + " INTEGER," +
                     OrderEntry.COLUMN_NAME_ADDRESS_ID + " INTEGER," +
                     "FOREIGN KEY(" + OrderEntry.COLUMN_NAME_USER_ID + ") REFERENCES " + UserEntry.TABLE_NAME + "(" + UserEntry.COLUMN_NAME_USER_ID + ")," +

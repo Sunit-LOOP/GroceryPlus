@@ -156,6 +156,8 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
             productVendorTv = itemView.findViewById(R.id.productVendorTv);
             productImageIv = itemView.findViewById(R.id.productImageIv);
             viewReviewsBtn = itemView.findViewById(R.id.viewReviewsBtn);
+            editBtn = itemView.findViewById(R.id.editProductBtn);
+            deleteBtn = itemView.findViewById(R.id.deleteProductBtn);
             
             viewReviewsBtn.setOnClickListener(new View.OnClickListener() {
                 @Override

@@ -67,7 +67,7 @@ public class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.View
         public void bind(OrderItem item) {
             productNameTextView.setText(item.getProductName());
             quantityTextView.setText("Qty: " + item.getQuantity());
-            unitPriceTextView.setText("₹" + String.format("%.2f", item.getPrice()));
+            unitPriceTextView.setText("Rs. " + String.format("%.2f", item.getPrice()));
             subtotalTextView.setText("₹" + String.format("%.2f", item.getSubtotal()));
 
             // Set product image with improved handling

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FAFAFA">
+    android:background="@color/background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
             android:id="@+id/paymentToolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#FFFFFF"
+            android:background="@color/surface"
             app:elevation="4dp">
             
             <TextView
@@ -25,7 +25,7 @@
                 android:layout_gravity="center"
                 android:text="Payment Method"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:textStyle="bold"/>
                 
         </com.google.android.material.appbar.MaterialToolbar>
@@ -51,7 +51,7 @@
                 android:text="Shipping Address"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="12dp"/>
 
             <com.google.android.material.card.MaterialCardView
@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:strokeColor="#E0E0E0"
+                app:strokeColor="@color/chip_background_color"
                 app:strokeWidth="1dp"
                 android:layout_marginBottom="24dp">
 
@@ -74,7 +74,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_dialog_map"
-                        app:tint="#666666"/>
+                        app:tint="@color/text_secondary"/>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -89,7 +89,7 @@
                             android:layout_height="wrap_content"
                             android:text="Home"
                             android:textStyle="bold"
-                            android:textColor="#1A1A1A"
+                            android:textColor="@color/text_primary"
                             android:textSize="16sp"/>
 
                         <TextView
@@ -97,7 +97,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Set your address"
-                            android:textColor="#666666"
+                            android:textColor="@color/text_secondary"
                             android:textSize="14sp"
                             android:layout_marginTop="4dp"/>
                     </LinearLayout>
@@ -107,7 +107,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@android:drawable/ic_menu_edit"
-                        app:tint="#4CAF50"
+                        app:tint="@color/primary"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:layout_marginEnd="12dp"/>
 
@@ -116,7 +116,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@android:drawable/ic_dialog_map"
-                        app:tint="#2196F3"
+                        app:tint="@color/secondary"
                         android:background="?attr/selectableItemBackgroundBorderless"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -128,7 +128,7 @@
                 android:text="Payment Method"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="12dp"/>
 
             <RadioGroup
@@ -145,7 +145,7 @@
                     android:layout_marginBottom="12dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:strokeColor="#4CAF50"
+                    app:strokeColor="@color/primary"
                     app:strokeWidth="2dp">
 
                     <LinearLayout
@@ -169,7 +169,7 @@
                             android:text="Stripe Payment"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#1A1A1A"/>
+                            android:textColor="@color/text_primary"/>
 
                         <RadioButton
                             android:id="@+id/creditCardRadio"
@@ -190,7 +190,7 @@
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:strokeColor="#E0E0E0"
+                    app:strokeColor="@color/chip_background_color"
                     app:strokeWidth="1dp">
 
                     <LinearLayout
@@ -214,7 +214,7 @@
                             android:text="Cash on Delivery"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#1A1A1A"/>
+                            android:textColor="@color/text_primary"/>
 
                         <RadioButton
                             android:id="@+id/cashOnDeliveryRadio"
@@ -233,7 +233,7 @@
                 android:text="Promo Code"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="12dp"/>
 
             <LinearLayout
@@ -271,7 +271,7 @@
                     android:paddingBottom="16dp"
                     android:minHeight="56dp"
                     app:cornerRadius="0dp"
-                    app:backgroundTint="#4CAF50"
+                    app:backgroundTint="@color/primary"
                     android:layout_marginBottom="0dp"/>
             </LinearLayout>
             <TextView
@@ -280,7 +280,7 @@
                 android:text="Order Summary"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="12dp"/>
 
             <com.google.android.material.card.MaterialCardView
@@ -307,14 +307,14 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Subtotal"
-                            android:textColor="#666666"/>
+                            android:textColor="@color/text_secondary"/>
                         
                         <TextView
                             android:id="@+id/summarySubtotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="₹1200.00"
-                            android:textColor="#1A1A1A"
+                            android:textColor="@color/text_primary"
                             android:textStyle="bold"/>
                     </LinearLayout>
 
@@ -329,13 +329,14 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Delivery Fee"
-                            android:textColor="#666666"/>
+                            android:textColor="@color/text_secondary"/>
                         
                         <TextView
+                            android:id="@+id/summaryDeliveryFee"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="₹50.00"
-                            android:textColor="#1A1A1A"
+                            android:textColor="@color/text_primary"
                             android:textStyle="bold"/>
                     </LinearLayout>
 
@@ -352,21 +353,21 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Discount"
-                            android:textColor="#F44336"/>
+                            android:textColor="@color/error"/>
 
                         <TextView
                             android:id="@+id/summaryDiscount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="-₹0.00"
-                            android:textColor="#F44336"
+                            android:textColor="@color/error"
                             android:textStyle="bold"/>
                     </LinearLayout>
                    
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/chip_background_color"
                         android:layout_marginVertical="8dp"/>
 
                     <LinearLayout
@@ -381,7 +382,7 @@
                             android:text="Total"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="#1A1A1A"/>
+                            android:textColor="@color/text_primary"/>
                         
                         <TextView
                             android:id="@+id/paymentTotalAmount"
@@ -390,7 +391,7 @@
                             android:text="₹1250.00"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="#4CAF50"/>
+                            android:textColor="@color/primary"/>
                     </LinearLayout>
 
                 </LinearLayout>

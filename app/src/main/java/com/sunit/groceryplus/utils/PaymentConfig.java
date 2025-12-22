@@ -19,8 +19,11 @@ public class PaymentConfig {
     public static final String BACKEND_URL = USE_PRODUCTION ? BACKEND_URL_PROD : BACKEND_URL_DEV;
     
     // Payment Configuration
-    public static final String CURRENCY = "inr";
-    public static final int MIN_AMOUNT = 50; // Minimum amount in cents (50 cents = ₹0.50)
+    public static final String CURRENCY = "npr";
+    public static final int MIN_AMOUNT = 50; // Minimum amount in paisa (50 paisa = NPR 0.50)
+    
+    // Delivery Configuration
+    public static final double DELIVERY_FEE = 100.0; // Delivery fee in NPR
     
     // Timeout Configuration
     public static final int PAYMENT_TIMEOUT_SECONDS = 300; // 5 minutes

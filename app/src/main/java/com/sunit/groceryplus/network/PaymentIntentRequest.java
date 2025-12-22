@@ -7,7 +7,7 @@ public class PaymentIntentRequest {
     public PaymentIntentRequest(int amount, String currency) {
         this.amount = amount;
         // Ensure we're using a valid currency code
-        this.currency = currency != null ? currency.toLowerCase() : "inr"; // Default to INR for India
+        this.currency = currency != null ? currency.toLowerCase() : "npr"; // NPR for Nepal
     }
 
     public int getAmount() {

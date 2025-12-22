@@ -51,6 +51,17 @@
             android:textColor="@android:color/darker_gray"
             android:layout_marginTop="4dp" />
 
+        <TextView
+            android:id="@+id/orderTimerTv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Estimated Delivery: 30:00"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FF9800"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -66,14 +77,29 @@
                 android:textSize="14sp"
                 android:textColor="@android:color/darker_gray" />
 
-            <TextView
-                android:id="@+id/orderTotalTv"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Rs. 0.00"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/holo_green_dark" />
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <TextView
+                    android:id="@+id/orderTotalTv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rs. 0.00"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/holo_green_dark" />
+
+                <TextView
+                    android:id="@+id/deliveryFeeTv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="(Fee: Rs. 0.00)"
+                    android:textSize="11sp"
+                    android:textColor="@android:color/darker_gray" />
+            </LinearLayout>
 
         </LinearLayout>
 

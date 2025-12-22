@@ -13,8 +13,10 @@ public class Order {
     private String userEmail;
     private String userPhone;
     private double totalAmount;
+    private double deliveryFee;
     private String status;
     private String orderDate;
+    private String shippedDate;
     private List<OrderItem> items;
     private boolean paymentReceived;
     private String paymentMethod;
@@ -34,32 +36,35 @@ public class Order {
 
     // Constructor with all fields
     public Order(int orderId, int userId, String userName, String userEmail, String userPhone,
-                 double totalAmount, String status, String orderDate) {
+                 double totalAmount, double deliveryFee, String status, String orderDate) {
         this.orderId = orderId;
         this.userId = userId;
         this.userName = userName;
         this.userEmail = userEmail;
         this.userPhone = userPhone;
         this.totalAmount = totalAmount;
+        this.deliveryFee = deliveryFee;
         this.status = status;
         this.orderDate = orderDate;
         this.items = new ArrayList<>();
     }
 
     // Constructor without orderId (for new orders)
-    public Order(int userId, double totalAmount, String status) {
+    public Order(int userId, double totalAmount, double deliveryFee, String status) {
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.deliveryFee = deliveryFee;
         this.status = status;
         this.items = new ArrayList<>();
     }
 
     // Constructor with addressId (used by getOrderById)
-    public Order(int orderId, int userId, String userName, double totalAmount, String status, String orderDate, int addressId) {
+    public Order(int orderId, int userId, String userName, double totalAmount, double deliveryFee, String status, String orderDate, int addressId) {
         this.orderId = orderId;
         this.userId = userId;
         this.userName = userName;
         this.totalAmount = totalAmount;
+        this.deliveryFee = deliveryFee;
         this.status = status;
         this.orderDate = orderDate;
         this.addressId = addressId;
@@ -73,6 +78,14 @@ public class Order {
 
     public void setOrderId(int orderId) {
         this.orderId = orderId;
+    }
+
+    public String getShippedDate() {
+        return shippedDate;
+    }
+
+    public void setShippedDate(String shippedDate) {
+        this.shippedDate = shippedDate;
     }
 
     public int getUserId() {
@@ -113,6 +126,14 @@ public class Order {
 
     public void setTotalAmount(double totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public double getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(double deliveryFee) {
+        this.deliveryFee = deliveryFee;
     }
 
     public String getStatus() {

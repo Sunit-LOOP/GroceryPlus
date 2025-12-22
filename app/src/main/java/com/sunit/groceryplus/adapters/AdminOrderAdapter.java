@@ -63,6 +63,7 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
         TextView orderStatusTv;
         TextView paymentStatusTv;
         TextView deliveryPersonTv;
+        TextView deliveryFeeTv;
         Button updateStatusBtn;
         Button assignDeliveryBtn;
 
@@ -74,6 +75,7 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
             orderStatusTv = itemView.findViewById(R.id.orderStatusTv);
             paymentStatusTv = itemView.findViewById(R.id.paymentStatusTv);
             deliveryPersonTv = itemView.findViewById(R.id.deliveryPersonTv);
+            deliveryFeeTv = itemView.findViewById(R.id.deliveryFeeTv);
             updateStatusBtn = itemView.findViewById(R.id.updateStatusBtn);
             assignDeliveryBtn = itemView.findViewById(R.id.assignDeliveryBtn);
 
@@ -96,14 +98,18 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
             orderIdTv.setText("Order #" + order.getOrderId());
             orderDateTv.setText(order.getOrderDate()); // Assuming Date format is string
             orderAmountTv.setText("Rs. " + String.format("%.2f", order.getTotalAmount()));
+            if (deliveryFeeTv != null) {
+                deliveryFeeTv.setText("(Fee: Rs. " + String.format("%.2f", order.getDeliveryFee()) + ")");
+            }
             orderStatusTv.setText(order.getStatus());
 
-            // ... (Color code status logic remains same)
             String status = order.getStatus();
             if ("Pending".equalsIgnoreCase(status)) {
                 orderStatusTv.setTextColor(Color.parseColor("#FF9800")); // Orange
             } else if ("Processing".equalsIgnoreCase(status)) {
                 orderStatusTv.setTextColor(Color.parseColor("#2196F3")); // Blue
+            } else if ("Shipped".equalsIgnoreCase(status)) {
+                orderStatusTv.setTextColor(Color.parseColor("#9C27B0")); // Purple
             } else if ("Delivered".equalsIgnoreCase(status)) {
                 orderStatusTv.setTextColor(Color.parseColor("#4CAF50")); // Green
             } else if ("Cancelled".equalsIgnoreCase(status)) {
@@ -112,7 +118,6 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
                 orderStatusTv.setTextColor(Color.DKGRAY);
             }
 
-            // ... (Payment status logic remains same)
             String paymentMethod = order.getPaymentMethod();
             if (paymentMethod != null && !paymentMethod.isEmpty()) {
                 paymentStatusTv.setText(String.format("Received (%s)", paymentMethod));
@@ -125,7 +130,6 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
                 paymentStatusTv.setTextColor(Color.parseColor("#F44336")); // Red
             }
             
-            // Delivery Person
             if (order.getDeliveryPersonName() != null) {
                 deliveryPersonTv.setText(order.getDeliveryPersonName());
             } else {

@@ -1,6 +1,7 @@
 package com.sunit.groceryplus.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sunit.groceryplus.R;
+import com.sunit.groceryplus.admin.AdminChatActivity;
 import com.sunit.groceryplus.models.Message;
 
 import java.util.List;
@@ -42,6 +44,12 @@ public class AdminMessageAdapter extends RecyclerView.Adapter<AdminMessageAdapte
         holder.senderTv.setText(message.getSenderName() != null ? message.getSenderName() : "User #" + message.getSenderId());
         holder.dateTv.setText(message.getCreatedAt());
         holder.contentTv.setText(message.getMessageText());
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AdminChatActivity.class);
+            intent.putExtra("user_id", message.getSenderId());
+            context.startActivity(intent);
+        });
     }
 
     @Override

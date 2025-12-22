@@ -39,7 +39,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         android:contentDescription="Add Vendor"
-        app:backgroundTint="@color/purple_500"
+        app:backgroundTint="@color/primary"
         app:srcCompat="@android:drawable/ic_input_add"
         app:tint="@android:color/white" />
 

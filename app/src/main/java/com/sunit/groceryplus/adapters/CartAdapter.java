@@ -67,7 +67,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
     
     // Method to calculate total price including delivery fee
     public double getTotalPriceWithDelivery() {
-        return getTotalPrice() + 50.0; // Rs. 50 delivery fee
+        return getTotalPrice() + com.sunit.groceryplus.utils.PaymentConfig.DELIVERY_FEE;
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {

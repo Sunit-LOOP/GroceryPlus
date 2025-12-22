@@ -34,6 +34,13 @@
             android:padding="16dp">
 
             <!-- Welcome Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manage your grocery plus application from here"
+                android:textColor="#666666"
+                android:textSize="14sp" />
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -55,13 +62,6 @@
                         android:textStyle="bold"
                         android:textColor="#333333"
                         android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Manage your grocery plus application from here"
-                        android:textSize="14sp"
-                        android:textColor="#666666" />
 
                 </LinearLayout>
 

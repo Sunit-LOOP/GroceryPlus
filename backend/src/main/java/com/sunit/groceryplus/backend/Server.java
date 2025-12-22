@@ -57,7 +57,7 @@ public class Server {
                 PaymentIntentCreateParams params =
                     PaymentIntentCreateParams.builder()
                         .setAmount((long) req.amount)
-                        .setCurrency(req.currency != null ? req.currency.toLowerCase() : "usd")
+                        .setCurrency(req.currency != null ? req.currency.toLowerCase() : "npr")
                         .setAutomaticPaymentMethods(
                             PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)

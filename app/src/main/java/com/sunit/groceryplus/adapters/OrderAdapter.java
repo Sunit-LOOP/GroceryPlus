@@ -1,6 +1,7 @@
 package com.sunit.groceryplus.adapters;
 
 import android.content.Context;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +13,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.sunit.groceryplus.R;
 import com.sunit.groceryplus.models.Order;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Adapter for displaying order history
@@ -60,9 +64,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     class OrderViewHolder extends RecyclerView.ViewHolder {
         TextView orderIdTv;
         TextView orderDateTv;
-        TextView orderStatusTv;
-        TextView orderTotalTv;
-        TextView orderItemCountTv;
+        private TextView orderStatusTv;
+        private TextView orderTotalTv;
+        private TextView deliveryFeeTv;
+        private TextView orderItemCountTv;
+        private TextView orderTimerTv;
+        private Handler timerHandler = new Handler();
+        private Runnable timerRunnable;
         View reorderBtn;
 
         public OrderViewHolder(@NonNull View itemView) {
@@ -71,7 +79,9 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             orderDateTv = itemView.findViewById(R.id.orderDateTv);
             orderStatusTv = itemView.findViewById(R.id.orderStatusTv);
             orderTotalTv = itemView.findViewById(R.id.orderTotalTv);
+            deliveryFeeTv = itemView.findViewById(R.id.deliveryFeeTv);
             orderItemCountTv = itemView.findViewById(R.id.orderItemCountTv);
+            orderTimerTv = itemView.findViewById(R.id.orderTimerTv);
             reorderBtn = itemView.findViewById(R.id.reorderBtn);
 
             reorderBtn.setOnClickListener(v -> {
@@ -94,6 +104,9 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             orderDateTv.setText(order.getOrderDate());
             orderStatusTv.setText(order.getStatus().toUpperCase());
             orderTotalTv.setText("Rs. " + String.format("%.2f", order.getTotalAmount()));
+            if (deliveryFeeTv != null) {
+                deliveryFeeTv.setText("(Fee: Rs. " + String.format("%.2f", order.getDeliveryFee()) + ")");
+            }
             
             if (orderItemCountTv != null) {
                 orderItemCountTv.setText(order.getItemCount() + " items");
@@ -102,6 +115,50 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             // Set status color
             int statusColor = getStatusColor(order.getStatus());
             orderStatusTv.setTextColor(statusColor);
+
+            setupTimer(order);
+        }
+
+        private void setupTimer(final Order order) {
+            if (timerRunnable != null) {
+                timerHandler.removeCallbacks(timerRunnable);
+            }
+
+            if ("shipped".equalsIgnoreCase(order.getStatus()) && order.getShippedDate() != null) {
+                orderTimerTv.setVisibility(View.VISIBLE);
+                
+                timerRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                            Date shippedDate = sdf.parse(order.getShippedDate());
+                            if (shippedDate == null) return;
+                            
+                            long currentTime = System.currentTimeMillis();
+                            long elapsedMillis = currentTime - shippedDate.getTime();
+                            long thirtyMinutesMillis = 30 * 60 * 1000;
+                            long remainingMillis = thirtyMinutesMillis - elapsedMillis;
+
+                            if (remainingMillis > 0) {
+                                long minutes = (remainingMillis / 1000) / 60;
+                                long seconds = (remainingMillis / 1000) % 60;
+                                orderTimerTv.setText(String.format("Estimated Delivery: %02d:%02d", minutes, seconds));
+                                orderTimerTv.setTextColor(context.getResources().getColor(android.R.color.holo_orange_dark));
+                                timerHandler.postDelayed(this, 1000);
+                            } else {
+                                orderTimerTv.setText("Estimated Delivery: Arriving any moment");
+                                orderTimerTv.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+                            }
+                        } catch (Exception e) {
+                            orderTimerTv.setVisibility(View.GONE);
+                        }
+                    }
+                };
+                timerHandler.post(timerRunnable);
+            } else {
+                orderTimerTv.setVisibility(View.GONE);
+            }
         }
 
         private int getStatusColor(String status) {
