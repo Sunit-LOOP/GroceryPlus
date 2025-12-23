@@ -38,6 +38,14 @@ public class NotificationHelper {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         dbHelper.addNotification(userId, title, message);
 
+        // Check if notifications are enabled
+        android.content.SharedPreferences prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        boolean notificationsEnabled = prefs.getBoolean("notifications_enabled", true);
+
+        if (!notificationsEnabled) {
+            return; // Don't show system notification if disabled
+        }
+
         // Build and display system notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notifications)

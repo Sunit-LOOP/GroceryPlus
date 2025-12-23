@@ -75,9 +75,10 @@ public class PromotionManagementActivity extends AppCompatActivity {
                 String code = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_CODE));
                 double discount = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE));
                 String validUntil = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL));
+                String imageUrl = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IMAGE_URL));
                 int active = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE));
-                
-                promotions.add(new Promotion(id, code, discount, validUntil, active == 1));
+
+                promotions.add(new Promotion(id, code, discount, validUntil, imageUrl, active == 1));
             } while (cursor.moveToNext());
             cursor.close();
         }
@@ -94,6 +95,7 @@ public class PromotionManagementActivity extends AppCompatActivity {
         TextInputEditText codeEt = dialogView.findViewById(R.id.promoCodeEt);
         TextInputEditText discountEt = dialogView.findViewById(R.id.promoDiscountEt);
         TextInputEditText validUntilEt = dialogView.findViewById(R.id.promoValidUntilEt);
+        TextInputEditText imageUrlEt = dialogView.findViewById(R.id.promoImageUrlEt);
         Button cancelBtn = dialogView.findViewById(R.id.cancelBtn);
         Button saveBtn = dialogView.findViewById(R.id.saveBtn);
 
@@ -103,15 +105,16 @@ public class PromotionManagementActivity extends AppCompatActivity {
             String code = codeEt.getText().toString().trim();
             String discountStr = discountEt.getText().toString().trim();
             String validUntil = validUntilEt.getText().toString().trim();
+            String imageUrl = imageUrlEt.getText().toString().trim();
 
-            if (code.isEmpty() || discountStr.isEmpty() || validUntil.isEmpty()) {
+            if (code.isEmpty() || discountStr.isEmpty() || validUntil.isEmpty() || imageUrl.isEmpty()) {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             try {
                 double discount = Double.parseDouble(discountStr);
-                long result = dbHelper.addPromotion(code, discount, validUntil);
+                long result = dbHelper.addPromotion(code, discount, validUntil, imageUrl);
                 if (result != -1) {
                     Toast.makeText(this, "Promotion added", Toast.LENGTH_SHORT).show();
                     loadPromotions();

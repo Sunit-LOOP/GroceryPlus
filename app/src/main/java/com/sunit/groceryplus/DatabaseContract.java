@@ -103,6 +103,7 @@ public final class DatabaseContract {
         public static final String COLUMN_NAME_CODE = "code";
         public static final String COLUMN_NAME_DISCOUNT_PERCENTAGE = "discount_percentage";
         public static final String COLUMN_NAME_VALID_UNTIL = "valid_until";
+        public static final String COLUMN_NAME_IMAGE_URL = "image_url";
         public static final String COLUMN_NAME_IS_ACTIVE = "is_active";
     }
 
@@ -250,6 +251,7 @@ public final class DatabaseContract {
                     PromotionEntry.COLUMN_NAME_CODE + " TEXT UNIQUE," +
                     PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE + " REAL," +
                     PromotionEntry.COLUMN_NAME_VALID_UNTIL + " TEXT," +
+                    PromotionEntry.COLUMN_NAME_IMAGE_URL + " TEXT," +
                     PromotionEntry.COLUMN_NAME_IS_ACTIVE + " INTEGER DEFAULT 1)";
 
     public static final String SQL_CREATE_REVIEWS_TABLE =

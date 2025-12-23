@@ -1340,12 +1340,13 @@ addProduct("Apple", (int)fruitsId, 120.0, "Fresh red apples", "apple", 200, 1);
 
     // ==================== PROMOTION METHODS ====================
 
-    public long addPromotion(String code, double discount, String validUntil) {
+    public long addPromotion(String code, double discount, String validUntil, String imageUrl) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_CODE, code);
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE, discount);
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL, validUntil);
+        values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_IMAGE_URL, imageUrl);
         values.put(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE, 1);
         return db.insert(DatabaseContract.PromotionEntry.TABLE_NAME, null, values);
     }
@@ -1361,9 +1362,10 @@ addProduct("Apple", (int)fruitsId, 120.0, "Fresh red apples", "apple", 200, 1);
             int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_PROMO_ID));
             double discount = cursor.getDouble(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_DISCOUNT_PERCENTAGE));
             String validUntil = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_VALID_UNTIL));
+            String imageUrl = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IMAGE_URL));
             boolean isActive = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE)) == 1;
             cursor.close();
-            return new com.sunit.groceryplus.models.Promotion(id, code, discount, validUntil, isActive);
+            return new com.sunit.groceryplus.models.Promotion(id, code, discount, validUntil, imageUrl, isActive);
         }
         if (cursor != null) cursor.close();
         return null;

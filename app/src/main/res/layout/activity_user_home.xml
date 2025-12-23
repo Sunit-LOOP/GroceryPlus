@@ -52,13 +52,31 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp">
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp">
                     <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/search_icon" app:tint="#757575"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Search for fresh items..." android:layout_marginStart="12dp" android:textColor="#9E9E9E"/>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Explore Vendors Map Link -->
+             <!-- Banner Carousel -->
+             <androidx.viewpager2.widget.ViewPager2
+                 android:id="@+id/bannerViewPager"
+                 android:layout_width="match_parent"
+                 android:layout_height="250dp"
+                 android:layout_marginBottom="8dp" />
+
+             <com.google.android.material.tabs.TabLayout
+                 android:id="@+id/bannerIndicator"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="center_horizontal"
+                 android:layout_marginBottom="16dp"
+                 app:tabBackground="@drawable/tab_indicator_selector"
+                 app:tabGravity="center"
+                 app:tabIndicatorHeight="0dp" />
+
+             <!-- Explore Vendors Map Link -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/exploreVendorsCard"
                 android:layout_width="match_parent"
@@ -105,24 +123,7 @@
                         android:src="@drawable/ic_chevron_right" 
                         app:tint="#BDBDBD"/>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-            <!-- Banner Carousel -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/bannerViewPager"
-                android:layout_width="match_parent"
-                android:layout_height="180dp"
-                android:layout_marginBottom="8dp" />
-
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/bannerIndicator"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:tabBackground="@drawable/circle_background"
-                app:tabGravity="center"
-                app:tabIndicatorHeight="0dp"
-                app:tabMaxWidth="12dp"
-                android:layout_marginBottom="16dp"
-                app:tabRippleColor="@android:color/transparent" />
+             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/freeDeliveryGoalCard"
@@ -180,8 +181,10 @@
                         android:id="@+id/deliveryTimeTv"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="6dp"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
                         android:text="20 mins"
                         android:textColor="#E65100"
                         android:textStyle="bold"
@@ -200,7 +203,6 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="8dp"
                 android:clipToPadding="false"
-                android:orientation="horizontal"
                 android:layout_marginBottom="24dp"/>
 
             <!-- Buy Again -->
@@ -217,8 +219,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingStart="8dp"
-                    android:clipToPadding="false"
-                    android:orientation="horizontal"/>
+                    android:clipToPadding="false"/>
             </LinearLayout>
 
             <!-- Recommended for You -->
@@ -242,8 +243,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingStart="8dp"
-                    android:clipToPadding="false"
-                    android:orientation="horizontal"/>
+                    android:clipToPadding="false"/>
             </LinearLayout>
 
             <!-- Featured Products -->
@@ -254,14 +254,14 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="8dp"
                 android:clipToPadding="false"
-                android:orientation="horizontal"
                 android:layout_marginBottom="24dp"/>
 
             <!-- All Products Header -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
                 android:layout_marginBottom="12dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="All Products" android:textSize="18sp" android:textStyle="bold" android:textColor="#212121"/>
                 <ImageView
@@ -277,7 +277,8 @@
                 android:id="@+id/allProductsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
                 android:nestedScrollingEnabled="false"/>
 
         </LinearLayout>

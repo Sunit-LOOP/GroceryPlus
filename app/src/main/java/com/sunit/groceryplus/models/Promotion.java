@@ -5,13 +5,15 @@ public class Promotion {
     private String code;
     private double discountPercentage;
     private String validUntil;
+    private String imageUrl;
     private boolean isActive;
 
-    public Promotion(int promoId, String code, double discountPercentage, String validUntil, boolean isActive) {
+    public Promotion(int promoId, String code, double discountPercentage, String validUntil, String imageUrl, boolean isActive) {
         this.promoId = promoId;
         this.code = code;
         this.discountPercentage = discountPercentage;
         this.validUntil = validUntil;
+        this.imageUrl = imageUrl;
         this.isActive = isActive;
     }
 
@@ -29,6 +31,10 @@ public class Promotion {
 
     public String getValidUntil() {
         return validUntil;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
     }
 
     public boolean isActive() {

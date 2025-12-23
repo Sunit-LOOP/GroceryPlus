@@ -1,6 +1,7 @@
 package com.sunit.groceryplus;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,6 +26,8 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import androidx.viewpager2.widget.ViewPager2;
 import android.os.Handler;
 
+import com.sunit.groceryplus.DatabaseContract;
+import com.sunit.groceryplus.DatabaseHelper;
 import com.sunit.groceryplus.utils.RecommendationEngine;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +53,8 @@ public class UserHomeActivity extends AppCompatActivity {
     private Runnable bannerRunnable;
     private static final long BANNER_DELAY = 30000; // 30 seconds
 
+    private DatabaseHelper dbHelper;
+
     private int userId;
     private CategoryRepository categoryRepository;
     private ProductRepository productRepository;
@@ -71,6 +76,8 @@ public class UserHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "UserHomeActivity onCreate called");
         setContentView(R.layout.activity_user_home);
+
+        dbHelper = new DatabaseHelper(this);
 
         userId = getIntent().getIntExtra("user_id", -1);
         Log.d(TAG, "Received user_id from intent: " + userId);
@@ -201,12 +208,24 @@ public class UserHomeActivity extends AppCompatActivity {
     }
 
     private void setupBanner() {
-        List<Integer> bannerImages = new ArrayList<>();
-        bannerImages.add(R.drawable.banner_1);
-        bannerImages.add(R.drawable.banner_2);
-        bannerImages.add(R.drawable.banner_3);
-        bannerImages.add(R.drawable.banner_4);
-        bannerImages.add(R.drawable.banner_5);
+        List<String> bannerImages = new ArrayList<>();
+        Cursor cursor = dbHelper.getAllPromotions();
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String imageUrl = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IMAGE_URL));
+                int isActive = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseContract.PromotionEntry.COLUMN_NAME_IS_ACTIVE));
+                if (isActive == 1 && imageUrl != null && !imageUrl.isEmpty()) {
+                    bannerImages.add(imageUrl);
+                }
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+
+        // Fallback to default banners if no promotions
+        if (bannerImages.isEmpty()) {
+            bannerImages.add("https://via.placeholder.com/800x400?text=Banner+1");
+            bannerImages.add("https://via.placeholder.com/800x400?text=Banner+2");
+        }
 
         bannerAdapter = new BannerAdapter(this, bannerImages);
         bannerViewPager.setAdapter(bannerAdapter);
