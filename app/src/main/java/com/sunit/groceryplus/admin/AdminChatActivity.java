@@ -2,6 +2,7 @@ package com.sunit.groceryplus.admin;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -15,6 +16,15 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.sunit.groceryplus.DatabaseHelper;
 import com.sunit.groceryplus.R;
 import com.sunit.groceryplus.adapters.AdminChatAdapter;
+import com.sunit.groceryplus.network.ApiClient;
+import com.sunit.groceryplus.network.GroceryApi;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AdminChatActivity extends AppCompatActivity {
 
@@ -24,6 +34,7 @@ public class AdminChatActivity extends AppCompatActivity {
 
     private AdminChatAdapter adapter;
     private DatabaseHelper dbHelper;
+    private GroceryApi groceryApi;
 
     private int userId;
     private int adminId;
@@ -37,6 +48,7 @@ public class AdminChatActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         adminId = dbHelper.getAdminId();
+        groceryApi = ApiClient.getGroceryApi();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -79,10 +91,36 @@ public class AdminChatActivity extends AppCompatActivity {
             if (result != -1) {
                 messageEt.setText("");
                 loadConversation();
+
+                // Sync message to web API
+                syncMessageToAPI(messageText);
             } else {
                 Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void syncMessageToAPI(String messageText) {
+        Map<String, Object> messageData = new HashMap<>();
+        messageData.put("sender_id", adminId);
+        messageData.put("receiver_id", userId);
+        messageData.put("message", messageText);
+
+        groceryApi.sendMessage(messageData).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful()) {
+                    Log.d("AdminChat", "Message synced to web API");
+                } else {
+                    Log.e("AdminChat", "Failed to sync message: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Log.e("AdminChat", "Error syncing message to API", t);
+            }
+        });
     }
 
     @Override

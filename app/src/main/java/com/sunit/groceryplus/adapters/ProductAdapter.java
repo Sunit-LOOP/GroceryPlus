@@ -72,7 +72,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Product product = productList.get(position);
         holder.productName.setText(product.getProductName());
-        holder.productPrice.setText(String.format("Rs. %.2f", product.getPrice()));
+        holder.productPrice.setText(String.format("रु %.2f", product.getPrice()));
         
         // Category Name (if available, otherwise placeholder)
         // Ideally pass category name or fetch it, for now hardcoded or skipped if not in model

@@ -15,6 +15,7 @@ import com.google.android.material.card.MaterialCardView;
 import android.widget.RadioButton;
 import com.sunit.groceryplus.models.CartItem;
 import com.sunit.groceryplus.network.ApiClient;
+import com.sunit.groceryplus.network.ApiService;
 import com.sunit.groceryplus.network.PaymentIntentRequest;
 import com.sunit.groceryplus.network.PaymentIntentResponse;
 import com.sunit.groceryplus.utils.Config;
@@ -41,9 +42,10 @@ public class PaymentActivity extends AppCompatActivity {
     private String paymentIntentClientSecret;
     private double finalAmount = 0.0;
     private int userId = -1;
-    
+
     // Database helper
     private com.sunit.groceryplus.DatabaseHelper dbHelper;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +66,7 @@ public class PaymentActivity extends AppCompatActivity {
         
         // Initialize database helper
         dbHelper = new com.sunit.groceryplus.DatabaseHelper(this);
+        apiService = new ApiService(this);
         
         initViews();
         setupToolbar();
@@ -249,6 +252,59 @@ public class PaymentActivity extends AppCompatActivity {
     private void createOrder(String paymentMethod) {
         Log.d(TAG, "Creating order with payment method: " + paymentMethod);
 
+        // Get cart items from database for the API call
+        CartRepository cartRepo = new CartRepository(this);
+        java.util.List<CartItem> cartItems = cartRepo.getCartItems(userId);
+        if (cartItems == null || cartItems.isEmpty()) {
+            Toast.makeText(this, "Cart is empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Prepare cart items for API
+        org.json.JSONArray cartItemsArray = new org.json.JSONArray();
+        try {
+            for (CartItem item : cartItems) {
+                org.json.JSONObject itemObj = new org.json.JSONObject();
+                itemObj.put("product_id", item.getProductId());
+                itemObj.put("quantity", item.getQuantity());
+                cartItemsArray.put(itemObj);
+            }
+        } catch (org.json.JSONException e) {
+            Log.e(TAG, "Error preparing cart items", e);
+            Toast.makeText(this, "Error preparing order", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Try API first, fallback to database
+        apiService.placeOrder(cartItemsArray, "Kathmandu, Nepal", new ApiService.ApiCallback<org.json.JSONObject>() {
+            @Override
+            public void onSuccess(org.json.JSONObject response) {
+                Log.d(TAG, "Order placed successfully via API");
+
+                // Clear cart after successful order
+                dbHelper.clearCart(userId);
+
+                // Show success message
+                String message = "Order placed successfully!";
+                Toast.makeText(PaymentActivity.this, message, Toast.LENGTH_LONG).show();
+
+                // Navigate to order success
+                Intent intent = new Intent(PaymentActivity.this, com.sunit.groceryplus.OrderSuccessActivity.class);
+                intent.putExtra("user_id", userId);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API place order failed: " + error + " - Using database");
+                createOrderDatabase(paymentMethod);
+            }
+        });
+    }
+
+    private void createOrderDatabase(String paymentMethod) {
         // Create order using direct database method
         double subtotal = getIntent().getDoubleExtra("subtotal_amount", 0.0);
         double deliveryFee = finalAmount - subtotal;
@@ -260,6 +316,9 @@ public class PaymentActivity extends AppCompatActivity {
             if (paymentId == -1) {
                 Log.e(TAG, "Failed to add payment record for order: " + orderId);
             }
+
+            // Clear cart after successful order
+            dbHelper.clearCart(userId);
 
             // Show success message
             String message = "Order placed successfully!";

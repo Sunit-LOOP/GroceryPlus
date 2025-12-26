@@ -3,6 +3,7 @@ package com.sunit.groceryplus;
 import android.os.Bundle;
 import android.util.Log;
 import com.sunit.groceryplus.models.User;
+import com.sunit.groceryplus.network.ApiClient;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -22,6 +23,9 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Initialize API client with application context
+        ApiClient.setContext(this);
 
         // Test database operations
         testDatabase();

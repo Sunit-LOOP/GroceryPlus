@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.sunit.groceryplus.adapters.ProductAdapter;
 import com.sunit.groceryplus.models.Product;
+import com.sunit.groceryplus.network.ApiService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,8 @@ public class FavoritesActivity extends AppCompatActivity {
     private FavoriteRepository favoriteRepository;
     private CartRepository cartRepository;
     private ProductAdapter productAdapter;
-    
+    private ApiService apiService;
+
     private List<Product> favoriteProducts = new ArrayList<>();
 
     @Override
@@ -47,6 +49,7 @@ public class FavoritesActivity extends AppCompatActivity {
         // Initialize repositories
         favoriteRepository = new FavoriteRepository(this);
         cartRepository = new CartRepository(this);
+        apiService = new ApiService(this);
 
         // Initialize views
         initViews();
@@ -92,38 +95,23 @@ public class FavoritesActivity extends AppCompatActivity {
     }
 
     private void loadFavorites() {
+        // For now, use database implementation
+        // API integration can be added later when API structure is confirmed
         try {
             favoriteProducts.clear();
             List<Product> products = favoriteRepository.getFavoriteProducts(userId);
-            
+
             if (products != null && !products.isEmpty()) {
                 favoriteProducts.addAll(products);
                 productAdapter.updateProducts(favoriteProducts);
                 showFavorites();
-                Log.d(TAG, "Loaded " + products.size() + " favorite products");
             } else {
-                productAdapter.updateProducts(favoriteProducts);
-                showEmptyState();
-                Log.d(TAG, "No favorite products found");
+                showEmptyFavorites();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error loading favorites", e);
             Toast.makeText(this, "Error loading favorites", Toast.LENGTH_SHORT).show();
-            showEmptyState();
-        }
-    }
-
-    private void addToCart(Product product) {
-        try {
-            boolean success = cartRepository.addToCart(userId, product.getProductId(), 1);
-            if (success) {
-                Toast.makeText(this, product.getProductName() + " added to cart", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Failed to add to cart", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error adding to cart", e);
-            Toast.makeText(this, "Error adding to cart", Toast.LENGTH_SHORT).show();
+            showEmptyFavorites();
         }
     }
 
@@ -132,7 +120,7 @@ public class FavoritesActivity extends AppCompatActivity {
         emptyFavoritesTv.setVisibility(View.GONE);
     }
 
-    private void showEmptyState() {
+    private void showEmptyFavorites() {
         favoritesRv.setVisibility(View.GONE);
         emptyFavoritesTv.setVisibility(View.VISIBLE);
     }

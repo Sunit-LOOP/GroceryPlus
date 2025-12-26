@@ -29,6 +29,7 @@ import android.os.Handler;
 import com.sunit.groceryplus.DatabaseContract;
 import com.sunit.groceryplus.DatabaseHelper;
 import com.sunit.groceryplus.utils.RecommendationEngine;
+import com.sunit.groceryplus.network.ApiService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,6 +62,7 @@ public class UserHomeActivity extends AppCompatActivity {
     private CartRepository cartRepository;
     private OrderRepository orderRepository;
     private RecommendationEngine recommendationEngine;
+    private ApiService apiService;
 
     private List<Category> categories = new ArrayList<>();
     private List<Product> featuredProducts = new ArrayList<>();
@@ -110,6 +112,7 @@ public class UserHomeActivity extends AppCompatActivity {
         cartRepository = new CartRepository(this);
         orderRepository = new OrderRepository(this);
         recommendationEngine = new RecommendationEngine(this);
+        apiService = new ApiService(this);
 
         initViews();
         setupRecyclerViews();
@@ -267,11 +270,87 @@ public class UserHomeActivity extends AppCompatActivity {
     }
 
     private void loadCategories() {
+        // Try API first, fallback to local database
+        apiService.getCategories(new ApiService.ApiCallback<org.json.JSONArray>() {
+            @Override
+            public void onSuccess(org.json.JSONArray response) {
+                try {
+                    categories.clear();
+                    for (int i = 0; i < response.length(); i++) {
+                        org.json.JSONObject categoryJson = response.getJSONObject(i);
+                        Category category = new Category();
+                        category.setCategoryId(categoryJson.getInt("category_id"));
+                        category.setCategoryName(categoryJson.getString("category_name"));
+                        category.setCategoryDescription(categoryJson.optString("category_description", ""));
+                        categories.add(category);
+                    }
+                    categoryAdapter.updateCategories(categories);
+                    Log.d(TAG, "Loaded " + categories.size() + " categories from API");
+                } catch (org.json.JSONException e) {
+                    Log.e(TAG, "Error parsing categories from API", e);
+                    loadCategoriesFromDatabase();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API categories failed: " + error + " - Loading from database");
+                loadCategoriesFromDatabase();
+            }
+        });
+    }
+
+    private void loadCategoriesFromDatabase() {
         categories = categoryRepository.getAllCategories();
         if (categories != null) categoryAdapter.updateCategories(categories);
     }
 
+    private Product parseProductFromJson(org.json.JSONObject productJson) throws org.json.JSONException {
+        Product product = new Product();
+        product.setProductId(productJson.getInt("product_id"));
+        product.setProductName(productJson.getString("product_name"));
+        product.setCategoryId(productJson.optInt("category_id", 0));
+        product.setCategoryName(productJson.optString("category_name", ""));
+        product.setPrice(productJson.optDouble("price", 0.0));
+        product.setDescription(productJson.optString("description", ""));
+        product.setImage(productJson.optString("image", null));
+        product.setStockQuantity(productJson.optInt("stock_quantity", 0));
+        product.setVendorId(productJson.optInt("vendor_id", 0));
+        product.setVendorName(productJson.optString("vendor_name", ""));
+        product.setRating(productJson.optDouble("average_rating", 0.0));
+        return product;
+    }
+
     private void loadFeaturedProducts() {
+        // Load featured products from API (first 6)
+        apiService.getProducts(null, null, 6, 0, new ApiService.ApiCallback<org.json.JSONObject>() {
+            @Override
+            public void onSuccess(org.json.JSONObject response) {
+                try {
+                    org.json.JSONArray productsArray = response.getJSONArray("products");
+                    featuredProducts.clear();
+                    for (int i = 0; i < Math.min(6, productsArray.length()); i++) {
+                        org.json.JSONObject productJson = productsArray.getJSONObject(i);
+                        Product product = parseProductFromJson(productJson);
+                        featuredProducts.add(product);
+                    }
+                    featuredAdapter.updateProducts(featuredProducts);
+                    Log.d(TAG, "Loaded " + featuredProducts.size() + " featured products from API");
+                } catch (org.json.JSONException e) {
+                    Log.e(TAG, "Error parsing featured products from API", e);
+                    loadFeaturedProductsFromDatabase();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API featured products failed: " + error + " - Loading from database");
+                loadFeaturedProductsFromDatabase();
+            }
+        });
+    }
+
+    private void loadFeaturedProductsFromDatabase() {
         List<Product> all = productRepository.getAllProducts();
         if (all != null && !all.isEmpty()) {
             featuredProducts.clear();
@@ -283,6 +362,37 @@ public class UserHomeActivity extends AppCompatActivity {
     }
 
     private void loadAllProducts() {
+        String categoryParam = selectedCategoryId == -1 ? null : String.valueOf(selectedCategoryId);
+
+        apiService.getProducts(categoryParam, null, null, null, new ApiService.ApiCallback<org.json.JSONObject>() {
+            @Override
+            public void onSuccess(org.json.JSONObject response) {
+                try {
+                    org.json.JSONArray productsArray = response.getJSONArray("products");
+                    allProducts.clear();
+                    for (int i = 0; i < productsArray.length(); i++) {
+                        org.json.JSONObject productJson = productsArray.getJSONObject(i);
+                        Product product = parseProductFromJson(productJson);
+                        allProducts.add(product);
+                    }
+                    applySortAndNotify();
+                    Log.d(TAG, "Loaded " + allProducts.size() + " products from API" +
+                            (selectedCategoryId != -1 ? " for category " + selectedCategoryId : ""));
+                } catch (org.json.JSONException e) {
+                    Log.e(TAG, "Error parsing products from API", e);
+                    loadAllProductsFromDatabase();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API products failed: " + error + " - Loading from database");
+                loadAllProductsFromDatabase();
+            }
+        });
+    }
+
+    private void loadAllProductsFromDatabase() {
         if (selectedCategoryId == -1) {
             allProducts = productRepository.getAllProducts();
         } else {

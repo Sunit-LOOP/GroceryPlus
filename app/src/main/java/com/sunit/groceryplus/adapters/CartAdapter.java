@@ -90,9 +90,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
 
         public void bind(CartItem item) {
             productNameTv.setText(item.getProductName());
-            priceTv.setText("Rs. " + String.format("%.2f", item.getPrice()));
+            priceTv.setText("रु " + String.format("%.2f", item.getPrice()));
             quantityTv.setText(String.valueOf(item.getQuantity()));
-            subtotalTv.setText("Subtotal: Rs. " + String.format("%.2f", item.getSubtotal()));
+            subtotalTv.setText("Subtotal: रु " + String.format("%.2f", item.getSubtotal()));
 
             // Set product image with improved handling
             String imageName = item.getImage();

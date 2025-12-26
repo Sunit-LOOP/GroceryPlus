@@ -13,6 +13,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.sunit.groceryplus.models.User;
+import com.sunit.groceryplus.network.ApiService;
+
+import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -22,6 +25,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginButton;
     private TextView signupTextView;
     private UserRepository userRepository;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +35,9 @@ public class LoginActivity extends AppCompatActivity {
         // Initialize views
         initViews();
 
-        // Initialize repository
+        // Initialize repositories
         userRepository = new UserRepository(this);
+        apiService = new ApiService(this);
 
         // Set click listeners
         setClickListeners();
@@ -79,52 +84,77 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Perform login
-        Log.d(TAG, "Attempting login for email: " + email);
-        User user = userRepository.loginUser(email, password);
-        
-        if (user != null) {
-            Log.d(TAG, "=== LOGIN SUCCESSFUL ===");
-            Log.d(TAG, "User ID: " + user.getUserId());
-            Log.d(TAG, "User Name: " + user.getName());
-            Log.d(TAG, "User Email: " + user.getEmail());
-            Log.d(TAG, "User Type: " + user.getUserType());
-            Log.d(TAG, "Is Admin: " + user.isAdmin());
-            
-            Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
+        // Disable button during login
+        loginButton.setEnabled(false);
+        loginButton.setText("Logging in...");
 
-            // Save session
-            android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt("userId", user.getUserId());
-            editor.putString("userName", user.getName());
-            editor.putString("userEmail", user.getEmail());
-            editor.putString("userType", user.getUserType());
-            editor.commit();
-            Log.d(TAG, "Session saved to SharedPreferences");
+        // Try API login first
+        Log.d(TAG, "Attempting API login for email: " + email);
+        apiService.login(email, password, new ApiService.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                Log.d(TAG, "=== API LOGIN SUCCESSFUL ===");
+                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
 
-            // Navigate to appropriate screen based on user type
-            if (user.isAdmin()) {
-                Log.d(TAG, "User is ADMIN - Redirecting to AdminDashboardActivity");
-                Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
-                intent.putExtra("user_id", user.getUserId());
-                Log.d(TAG, "Starting AdminDashboardActivity...");
-                startActivity(intent);
-            } else {
-                Log.d(TAG, "User is CUSTOMER - Redirecting to UserHomeActivity");
+                // Navigate to user home (API users are customers)
                 Intent intent = new Intent(LoginActivity.this, UserHomeActivity.class);
-                intent.putExtra("user_id", user.getUserId());
-                Log.d(TAG, "Intent created with user_id: " + user.getUserId());
-                Log.d(TAG, "Starting UserHomeActivity...");
                 startActivity(intent);
-                Log.d(TAG, "UserHomeActivity started successfully");
+                finish();
             }
-            Log.d(TAG, "Finishing LoginActivity...");
-            finish();
-            Log.d(TAG, "=== LOGIN FLOW COMPLETE ===");
-        } else {
-            Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Login failed for email: " + email + " - User is null");
-        }
+
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API login failed: " + error + " - Trying database login");
+
+                // Fallback to database login (for admin users)
+                User user = userRepository.loginUser(email, password);
+
+                if (user != null) {
+                    Log.d(TAG, "=== DATABASE LOGIN SUCCESSFUL ===");
+                    Log.d(TAG, "User ID: " + user.getUserId());
+                    Log.d(TAG, "User Name: " + user.getName());
+                    Log.d(TAG, "User Email: " + user.getEmail());
+                    Log.d(TAG, "User Type: " + user.getUserType());
+                    Log.d(TAG, "Is Admin: " + user.isAdmin());
+
+                    Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
+
+                    // Save session
+                    android.content.SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                    android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putInt("userId", user.getUserId());
+                    editor.putString("userName", user.getName());
+                    editor.putString("userEmail", user.getEmail());
+                    editor.putString("userType", user.getUserType());
+                    editor.commit();
+                    Log.d(TAG, "Session saved to SharedPreferences");
+
+                    // Navigate to appropriate screen based on user type
+                    if (user.isAdmin()) {
+                        Log.d(TAG, "User is ADMIN - Redirecting to AdminDashboardActivity");
+                        Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+                        intent.putExtra("user_id", user.getUserId());
+                        Log.d(TAG, "Starting AdminDashboardActivity...");
+                        startActivity(intent);
+                    } else {
+                        Log.d(TAG, "User is CUSTOMER - Redirecting to UserHomeActivity");
+                        Intent intent = new Intent(LoginActivity.this, UserHomeActivity.class);
+                        intent.putExtra("user_id", user.getUserId());
+                        Log.d(TAG, "Intent created with user_id: " + user.getUserId());
+                        Log.d(TAG, "Starting UserHomeActivity...");
+                        startActivity(intent);
+                        Log.d(TAG, "UserHomeActivity started successfully");
+                    }
+                    Log.d(TAG, "Finishing LoginActivity...");
+                    finish();
+                    Log.d(TAG, "=== LOGIN FLOW COMPLETE ===");
+                } else {
+                    loginButton.setEnabled(true);
+                    loginButton.setText("Login");
+                    Toast.makeText(LoginActivity.this, "Invalid email or password", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Both API and database login failed for email: " + email);
+                }
+            }
+        });
     }
 }
